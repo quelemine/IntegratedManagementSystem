@@ -1,0 +1,49 @@
+{
+  "name": "sim-technology-institute-management-system",
+  "version": "1.0.0",
+  "description": "SIM Technology Institute - ABC-Grade 12 Liberian School Integrated Management, Learning & Communication Platform",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "install-all": "npm install && cd client && npm install",
+    "migrate": "npx knex migrate:latest",
+    "migrate:rollback": "npx knex migrate:rollback",
+    "seed": "npx knex seed:run",
+    "test": "jest"
+  },
+  "keywords": [
+    "school",
+    "management",
+    "education",
+    "liberia",
+    "sim-technology-institute"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "moment": "^2.29.4",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.13.0",
+    "pg": "^8.11.3",
+    "qrcode": "^1.5.3",
+    "sqlite3": "^6.0.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2"
+  }
+}
