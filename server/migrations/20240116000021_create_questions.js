@@ -4,17 +4,17 @@
  */
 exports.up = function(knex) {
   return knex.schema.createTable('questions', (table) => {
-    table.string('id').primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
-    table.string('quiz_id').references('id').inTable('quizzes');
-    table.string('exam_id').references('id').inTable('exams');
-    table.string('question_bank_id');
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.uuid('quiz_id').references('id').inTable('quizzes');
+    table.uuid('exam_id').references('id').inTable('exams');
+    table.uuid('question_bank_id');
     table.text('question_text').notNullable();
     table.string('question_type').notNullable();
-    table.text('options');
-    table.text('correct_answer');
+    table.jsonb('options');
+    table.jsonb('correct_answer');
     table.integer('points');
     table.integer('order');
-    table.datetime('created_at').defaultTo(knex.fn.now());
+    table.timestamp('created_at').defaultTo(knex.fn.now());
   });
 };
 

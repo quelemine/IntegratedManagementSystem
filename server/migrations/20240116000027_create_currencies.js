@@ -4,16 +4,16 @@
  */
 exports.up = function(knex) {
   return knex.schema.createTable('currencies', (table) => {
-    table.string('id').primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
-    table.string('school_id').references('id').inTable('schools').notNullable();
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.uuid('school_id').references('id').inTable('schools').notNullable();
     table.string('code').notNullable();
     table.string('name').notNullable();
     table.string('symbol');
     table.decimal('exchange_rate_to_usd');
     table.boolean('is_default').defaultTo(false);
     table.boolean('is_active').defaultTo(true);
-    table.datetime('created_at').defaultTo(knex.fn.now());
-    table.datetime('updated_at').defaultTo(knex.fn.now());
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+    table.timestamp('updated_at').defaultTo(knex.fn.now());
   });
 };
 

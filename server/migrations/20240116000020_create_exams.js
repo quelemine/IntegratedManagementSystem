@@ -4,18 +4,18 @@
  */
 exports.up = function(knex) {
   return knex.schema.createTable('exams', (table) => {
-    table.string('id').primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
-    table.string('school_id').references('id').inTable('schools').notNullable();
-    table.string('course_id').references('id').inTable('courses').notNullable();
-    table.string('teacher_id').references('id').inTable('teachers').notNullable();
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.uuid('school_id').references('id').inTable('schools').notNullable();
+    table.uuid('course_id').references('id').inTable('courses').notNullable();
+    table.uuid('teacher_id').references('id').inTable('teachers').notNullable();
     table.string('title').notNullable();
     table.string('exam_type');
     table.text('description');
     table.integer('duration');
     table.integer('total_points');
-    table.datetime('exam_date');
-    table.datetime('created_at').defaultTo(knex.fn.now());
-    table.datetime('updated_at').defaultTo(knex.fn.now());
+    table.timestamp('exam_date');
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+    table.timestamp('updated_at').defaultTo(knex.fn.now());
   });
 };
 

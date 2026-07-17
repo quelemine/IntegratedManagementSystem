@@ -4,15 +4,15 @@
  */
 exports.up = function(knex) {
   return knex.schema.createTable('attendance', (table) => {
-    table.string('id').primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
-    table.string('school_id').references('id').inTable('schools').notNullable();
-    table.string('student_id').references('id').inTable('students').notNullable();
-    table.string('class_id').references('id').inTable('classes').notNullable();
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.uuid('school_id').references('id').inTable('schools').notNullable();
+    table.uuid('student_id').references('id').inTable('students').notNullable();
+    table.uuid('class_id').references('id').inTable('classes').notNullable();
     table.date('date').notNullable();
     table.string('status').notNullable();
     table.text('remarks');
-    table.string('recorded_by').references('id').inTable('users');
-    table.datetime('created_at').defaultTo(knex.fn.now());
+    table.uuid('recorded_by').references('id').inTable('users');
+    table.timestamp('created_at').defaultTo(knex.fn.now());
   });
 };
 

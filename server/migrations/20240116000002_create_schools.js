@@ -4,7 +4,7 @@
  */
 exports.up = function(knex) {
   return knex.schema.createTable('schools', (table) => {
-    table.string('id').primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.string('name').notNullable();
     table.string('code').unique().notNullable();
     table.text('address');
@@ -14,9 +14,9 @@ exports.up = function(knex) {
     table.string('primary_color');
     table.string('secondary_color');
     table.string('accent_color');
-    table.text('settings');
-    table.datetime('created_at').defaultTo(knex.fn.now());
-    table.datetime('updated_at').defaultTo(knex.fn.now());
+    table.jsonb('settings');
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+    table.timestamp('updated_at').defaultTo(knex.fn.now());
   });
 };
 

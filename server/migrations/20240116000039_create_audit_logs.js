@@ -4,17 +4,17 @@
  */
 exports.up = function(knex) {
   return knex.schema.createTable('audit_logs', (table) => {
-    table.string('id').primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
-    table.string('school_id').references('id').inTable('schools').notNullable();
-    table.string('user_id').references('id').inTable('users').notNullable();
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.uuid('school_id').references('id').inTable('schools').notNullable();
+    table.uuid('user_id').references('id').inTable('users').notNullable();
     table.string('action').notNullable();
     table.string('entity_type');
-    table.string('entity_id');
-    table.text('old_values');
-    table.text('new_values');
+    table.uuid('entity_id');
+    table.jsonb('old_values');
+    table.jsonb('new_values');
     table.string('ip_address');
     table.string('user_agent');
-    table.datetime('timestamp').defaultTo(knex.fn.now());
+    table.timestamp('timestamp').defaultTo(knex.fn.now());
   });
 };
 

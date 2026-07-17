@@ -4,18 +4,18 @@
  */
 exports.up = function(knex) {
   return knex.schema.createTable('tutoring_sessions', (table) => {
-    table.string('id').primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
-    table.string('school_id').references('id').inTable('schools').notNullable();
-    table.string('tutor_id').references('id').inTable('tutors').notNullable();
-    table.string('student_id').references('id').inTable('students').notNullable();
-    table.string('subject_id').references('id').inTable('subjects');
-    table.datetime('scheduled_date');
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.uuid('school_id').references('id').inTable('schools').notNullable();
+    table.uuid('tutor_id').references('id').inTable('tutors').notNullable();
+    table.uuid('student_id').references('id').inTable('students').notNullable();
+    table.uuid('subject_id').references('id').inTable('subjects');
+    table.timestamp('scheduled_date');
     table.integer('duration');
     table.string('status');
     table.text('notes');
     table.decimal('fee');
-    table.datetime('created_at').defaultTo(knex.fn.now());
-    table.datetime('updated_at').defaultTo(knex.fn.now());
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+    table.timestamp('updated_at').defaultTo(knex.fn.now());
   });
 };
 

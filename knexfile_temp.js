@@ -3,7 +3,7 @@ require('dotenv').config();
 
 module.exports = {
   development: {
-    client: process.env.DB_CLIENT || 'sqlite3',
+    client: process.env.DB_CLIENT || 'pg',
     connection: process.env.DB_CLIENT === 'pg' ? {
       host: process.env.DB_HOST,
       port: process.env.DB_PORT,
