@@ -45,7 +45,7 @@ const getStudents = async (req, res) => {
     }
 
     const students = await query
-      .orderBy('students.last_name')
+      .orderBy('users.last_name')
       .limit(limit)
       .offset(offset);
 

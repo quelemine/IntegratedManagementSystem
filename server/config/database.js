@@ -1,5 +1,5 @@
 const knex = require('knex');
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 
 const db = knex({
   client: process.env.DB_CLIENT || 'pg',
@@ -12,7 +12,13 @@ const db = knex({
   } : {
     filename: process.env.DB_FILE || './server/database.sqlite3'
   },
-  useNullAsDefault: true
+  useNullAsDefault: true,
+  pool: {
+    min: 0,
+    max: 10,
+    acquireTimeoutMillis: 30000,
+    idleTimeoutMillis: 30000
+  }
 });
 
 module.exports = db;

@@ -9,7 +9,7 @@ const authenticate = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
+      return res.status(401).json({ success: false, error: 'No token provided' });
     }
     
     const token = authHeader.substring(7);
@@ -22,7 +22,7 @@ const authenticate = async (req, res, next) => {
       .first();
     
     if (!user) {
-      return res.status(401).json({ error: 'Invalid token or user not active' });
+      return res.status(401).json({ success: false, error: 'Invalid token or user not active' });
     }
     
     req.user = {
@@ -36,7 +36,13 @@ const authenticate = async (req, res, next) => {
     
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, error: 'Token expired' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, error: 'Invalid token' });
+    }
+    return res.status(401).json({ success: false, error: 'Authentication failed' });
   }
 };
 
