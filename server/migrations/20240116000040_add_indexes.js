@@ -26,7 +26,6 @@ exports.up = function(knex) {
     .table('teachers', function(table) {
       table.index('user_id');
       table.index('school_id');
-      table.index('division_id');
     })
     
     // Classes table indexes
@@ -113,7 +112,6 @@ exports.down = function(knex) {
     .table('teachers', function(table) {
       table.dropIndex('user_id');
       table.dropIndex('school_id');
-      table.dropIndex('division_id');
     })
     .table('classes', function(table) {
       table.dropIndex('school_id');
