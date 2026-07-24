@@ -36,4 +36,4 @@ Thumbs.db
 backups/
 
 # Knex
-knexfile.js
+# knexfile.js - needed for cloud deployment
