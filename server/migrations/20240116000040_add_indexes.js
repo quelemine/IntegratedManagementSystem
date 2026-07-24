@@ -67,13 +67,6 @@ exports.up = function(knex) {
       table.index('is_active');
     })
     
-    // Notifications table indexes
-    .table('notifications', function(table) {
-      table.index('user_id');
-      table.index('is_read');
-      table.index('created_at');
-      table.index('type');
-    })
     
     // Invoices table indexes
     .table('invoices', function(table) {
@@ -139,12 +132,6 @@ exports.down = function(knex) {
       table.dropIndex('publish_date');
       table.dropIndex('expiry_date');
       table.dropIndex('is_active');
-    })
-    .table('notifications', function(table) {
-      table.dropIndex('user_id');
-      table.dropIndex('is_read');
-      table.dropIndex('created_at');
-      table.dropIndex('type');
     })
     .table('invoices', function(table) {
       table.dropIndex('student_id');
