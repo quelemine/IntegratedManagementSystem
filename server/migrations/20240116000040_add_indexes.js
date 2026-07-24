@@ -32,7 +32,6 @@ exports.up = function(knex) {
     .table('classes', function(table) {
       table.index('school_id');
       table.index('grade_id');
-      table.index('division_id');
     })
     
     // Attendance table indexes
@@ -45,7 +44,7 @@ exports.up = function(knex) {
     
     // Assignments table indexes
     .table('assignments', function(table) {
-      table.index('class_id');
+      table.index('course_id');
       table.index('school_id');
       table.index('due_date');
     })
@@ -86,7 +85,6 @@ exports.up = function(knex) {
     
     // Payments table indexes
     .table('payments', function(table) {
-      table.index('invoice_id');
       table.index('school_id');
       table.index('payment_date');
       table.index('status');
@@ -116,7 +114,6 @@ exports.down = function(knex) {
     .table('classes', function(table) {
       table.dropIndex('school_id');
       table.dropIndex('grade_id');
-      table.dropIndex('division_id');
     })
     .table('attendance', function(table) {
       table.dropIndex('student_id');
@@ -125,7 +122,7 @@ exports.down = function(knex) {
       table.dropIndex('school_id');
     })
     .table('assignments', function(table) {
-      table.dropIndex('class_id');
+      table.dropIndex('course_id');
       table.dropIndex('school_id');
       table.dropIndex('due_date');
     })
@@ -156,7 +153,6 @@ exports.down = function(knex) {
       table.dropIndex('due_date');
     })
     .table('payments', function(table) {
-      table.dropIndex('invoice_id');
       table.dropIndex('school_id');
       table.dropIndex('payment_date');
       table.dropIndex('status');
