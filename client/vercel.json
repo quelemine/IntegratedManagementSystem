@@ -16,6 +16,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "@api-url"
+    "VITE_API_URL": "https://integratedmanagementsystem.onrender.com/api"
   }
 }
