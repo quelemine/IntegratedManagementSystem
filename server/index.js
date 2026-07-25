@@ -20,7 +20,7 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL || ['http://localhost:3000', 'https://integrated-management-system-gfi3.vercel.app'],
   credentials: true
 }));
 
