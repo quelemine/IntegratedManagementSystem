@@ -14,7 +14,14 @@ exports.seed = async function(knex) {
   const existingAdmin = await knex('users').where('email', 'admin@simtechinstitute.edu').first();
   
   if (existingAdmin) {
-    console.log('Admin user already exists, skipping insert');
+    // Update the password to ensure it matches
+    await knex('users')
+      .where('email', 'admin@simtechinstitute.edu')
+      .update({
+        password: hashedPassword,
+        is_active: true
+      });
+    console.log('Admin user password updated successfully');
     return;
   }
   
