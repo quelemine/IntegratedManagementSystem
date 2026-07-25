@@ -1,22 +1,23 @@
-const db = require('../config/database');
-
-async function seedCommunicationData() {
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+exports.seed = async function(knex) {
   try {
     console.log('Seeding communication data...');
 
     // Get school and users
-    const school = await db('schools').first();
-    const principal = await db('users').where('email', 'like', 'principal.%').first();
-    const teacher = await db('users').where('email', 'like', 'teacher.%').first();
-    const parent = await db('users').where('email', 'like', 'parent%').first();
-    const student = await db('students').first();
-    const studentUser = student ? await db('users').where('id', student.user_id).first() : null;
+    const school = await knex('schools').first();
+    const principal = await knex('users').where('email', 'like', 'principal.%').first();
+    const teacher = await knex('users').where('email', 'like', 'teacher.%').first();
+    const parent = await knex('users').where('email', 'like', 'parent%').first();
+    const student = await knex('students').first();
+    const studentUser = student ? await knex('users').where('id', student.user_id).first() : null;
 
     if (!school || !principal || !teacher || !parent || !studentUser) {
       console.log('Required users not found, skipping seed');
       console.log('School:', !!school, 'Principal:', !!principal, 'Teacher:', !!teacher, 'Parent:', !!parent, 'StudentUser:', !!studentUser);
-      await db.destroy();
-      process.exit(0);
+      return;
     }
 
     // Seed Messages
@@ -62,7 +63,7 @@ async function seedCommunicationData() {
     ];
 
     for (const message of messages) {
-      await db('messages').insert(message);
+      await knex('messages').insert(message);
     }
     console.log('✓ Messages seeded');
 
@@ -107,7 +108,7 @@ async function seedCommunicationData() {
     ];
 
     for (const announcement of announcements) {
-      await db('announcements').insert(announcement);
+      await knex('announcements').insert(announcement);
     }
     console.log('✓ Announcements seeded');
 
@@ -143,18 +144,13 @@ async function seedCommunicationData() {
     ];
 
     for (const notification of notifications) {
-      await db('notifications').insert(notification);
+      await knex('notifications').insert(notification);
     }
     console.log('✓ Notifications seeded');
 
     console.log('Communication data seeded successfully!');
-    await db.destroy();
-    process.exit(0);
   } catch (error) {
     console.error('Error seeding communication data:', error);
-    await db.destroy();
-    process.exit(1);
+    throw error;
   }
-}
-
-seedCommunicationData();
+};

@@ -1,12 +1,13 @@
-require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
-const db = require('../config/database');
-
-async function seedFinancialData() {
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+exports.seed = async function(knex) {
   try {
     console.log('Seeding Phase 3 Financial Features data...\n');
 
     // Get school ID
-    const school = await db('schools').first('id');
+    const school = await knex('schools').first('id');
     const schoolId = school.id;
 
     // Seed fee categories
@@ -24,7 +25,7 @@ async function seedFinancialData() {
     ];
 
     for (const category of feeCategories) {
-      await db('fee_categories').insert({
+      await knex('fee_categories').insert({
         school_id: schoolId,
         name: category.name,
         description: category.description,
@@ -34,19 +35,19 @@ async function seedFinancialData() {
     console.log('✓ Seeded fee categories');
 
     // Get grades for tuition structures
-    const grades = await db('grades').select('id', 'name');
+    const grades = await knex('grades').select('id', 'name');
 
     // Seed tuition structures for each grade
     const academicYear = '2024-2025';
     for (const grade of grades) {
-      const baseAmount = grade.name.includes('12') ? 50000 : 
+      const baseAmount = grade.name.includes('12') ? 50000 :
                          grade.name.includes('11') ? 45000 :
                          grade.name.includes('10') ? 40000 :
                          grade.name.includes('9') ? 35000 :
                          grade.name.includes('8') ? 30000 :
                          grade.name.includes('7') ? 25000 : 20000;
 
-      await db('tuition_structures').insert({
+      await knex('tuition_structures').insert({
         school_id: schoolId,
         grade_id: grade.id,
         name: `${grade.name} Grade Tuition`,
@@ -59,12 +60,12 @@ async function seedFinancialData() {
     console.log('✓ Seeded tuition structures');
 
     // Get classes for class fees
-    const classes = await db('classes').select('id', 'name').limit(5);
-    const labFeeCategory = await db('fee_categories').where('name', 'Laboratory').first('id');
-    const computerFeeCategory = await db('fee_categories').where('name', 'Computer Lab').first('id');
+    const classes = await knex('classes').select('id', 'name').limit(5);
+    const labFeeCategory = await knex('fee_categories').where('name', 'Laboratory').first('id');
+    const computerFeeCategory = await knex('fee_categories').where('name', 'Computer Lab').first('id');
 
     for (const classRecord of classes) {
-      await db('class_fees').insert({
+      await knex('class_fees').insert({
         school_id: schoolId,
         class_id: classRecord.id,
         fee_category_id: labFeeCategory.id,
@@ -74,7 +75,7 @@ async function seedFinancialData() {
         is_active: true
       });
 
-      await db('class_fees').insert({
+      await knex('class_fees').insert({
         school_id: schoolId,
         class_id: classRecord.id,
         fee_category_id: computerFeeCategory.id,
@@ -87,10 +88,10 @@ async function seedFinancialData() {
     console.log('✓ Seeded class fees');
 
     // Seed academic year fees
-    const registrationCategory = await db('fee_categories').where('name', 'Registration').first('id');
-    const booksCategory = await db('fee_categories').where('name', 'Books').first('id');
+    const registrationCategory = await knex('fee_categories').where('name', 'Registration').first('id');
+    const booksCategory = await knex('fee_categories').where('name', 'Books').first('id');
 
-    await db('academic_year_fees').insert([
+    await knex('academic_year_fees').insert([
       {
         school_id: schoolId,
         fee_category_id: registrationCategory.id,
@@ -122,7 +123,7 @@ async function seedFinancialData() {
     console.log('✓ Seeded academic year fees');
 
     // Seed discounts
-    await db('discounts').insert([
+    await knex('discounts').insert([
       {
         school_id: schoolId,
         name: 'Early Payment Discount',
@@ -160,7 +161,7 @@ async function seedFinancialData() {
     console.log('✓ Seeded discounts');
 
     // Seed scholarships
-    await db('scholarships').insert([
+    await knex('scholarships').insert([
       {
         school_id: schoolId,
         name: 'Academic Excellence Scholarship',
@@ -195,11 +196,8 @@ async function seedFinancialData() {
     console.log('✓ Seeded scholarships');
 
     console.log('\n✓ All Phase 3 Financial Features seed data created successfully');
-    process.exit(0);
   } catch (error) {
     console.error('Error seeding data:', error.message);
-    process.exit(1);
+    throw error;
   }
-}
-
-seedFinancialData();
+};
