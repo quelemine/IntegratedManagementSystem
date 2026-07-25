@@ -100,6 +100,32 @@ router.post('/login', validationRules.login, validate, authController.login);
 
 /**
  * @swagger
+ * /api/auth/check-admin:
+ *   get:
+ *     summary: Check if admin user exists (debug endpoint)
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Admin user status
+ */
+router.get('/check-admin', async (req, res) => {
+  try {
+    const db = require('../config/database');
+    const admin = await db('users').where('email', 'admin@simtechinstitute.edu').first('id', 'email', 'is_active');
+    
+    if (admin) {
+      res.json({ exists: true, email: admin.email, is_active: admin.is_active });
+    } else {
+      res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error('Check admin error:', error);
+    res.status(500).json({ error: 'Failed to check admin user' });
+  }
+});
+
+/**
+ * @swagger
  * /api/auth/logout:
  *   post:
  *     summary: Logout user
