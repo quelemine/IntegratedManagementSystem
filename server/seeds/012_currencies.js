@@ -3,11 +3,13 @@
  * @returns { Promise<void> }
  */
 exports.seed = async function(knex) {
-  await knex('currencies').del();
-  
   const schoolId = process.env.SEED_SCHOOL_ID || (await knex('schools').first('id')).id;
   
-  await knex('currencies').insert([
+  // Get existing currency codes
+  const existingCurrencies = await knex('currencies').where('school_id', schoolId).select('code');
+  const existingCodes = existingCurrencies.map(c => c.code);
+  
+  const currencies = [
     {
       school_id: schoolId,
       code: 'LRD',
@@ -26,5 +28,14 @@ exports.seed = async function(knex) {
       is_default: false,
       is_active: true
     }
-  ]);
+  ];
+  
+  const currenciesToInsert = currencies.filter(currency => !existingCodes.includes(currency.code));
+  
+  // Insert only new currencies
+  if (currenciesToInsert.length > 0) {
+    await knex('currencies').insert(currenciesToInsert);
+  }
+  
+  console.log(`Processed ${currenciesToInsert.length} new currencies`);
 };

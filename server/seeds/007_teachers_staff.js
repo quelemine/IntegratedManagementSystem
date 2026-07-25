@@ -3,9 +3,6 @@
  * @returns { Promise<void> }
  */
 exports.seed = async function(knex) {
-  await knex('teachers').del();
-  await knex('staff').del();
-  
   const schoolId = process.env.SEED_SCHOOL_ID || (await knex('schools').first('id')).id;
   
   // Get teacher user IDs
@@ -20,11 +17,15 @@ exports.seed = async function(knex) {
     .orderBy('email')
     .select('id');
   
+  // Get existing teacher user IDs
+  const existingTeachers = await knex('teachers').select('user_id');
+  const existingTeacherUserIds = existingTeachers.map(t => t.user_id);
+  
   // Teachers
-  await knex('teachers').insert([
+  const teachersToInsert = [];
+  const teacherData = [
     {
-      school_id: schoolId,
-      user_id: teacherUsers[0].id,
+      user_id: teacherUsers[0]?.id,
       employee_id: 'STF-2024-0001',
       qualification: 'B.Ed English',
       specialization: 'English Language',
@@ -34,8 +35,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      school_id: schoolId,
-      user_id: teacherUsers[1].id,
+      user_id: teacherUsers[1]?.id,
       employee_id: 'STF-2024-0002',
       qualification: 'B.Sc Mathematics',
       specialization: 'Mathematics',
@@ -45,8 +45,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      school_id: schoolId,
-      user_id: teacherUsers[2].id,
+      user_id: teacherUsers[2]?.id,
       employee_id: 'STF-2024-0003',
       qualification: 'B.Sc Biology',
       specialization: 'Science',
@@ -56,8 +55,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      school_id: schoolId,
-      user_id: teacherUsers[3].id,
+      user_id: teacherUsers[3]?.id,
       employee_id: 'STF-2024-0004',
       qualification: 'B.A History',
       specialization: 'Social Studies',
@@ -67,8 +65,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      school_id: schoolId,
-      user_id: teacherUsers[4].id,
+      user_id: teacherUsers[4]?.id,
       employee_id: 'STF-2024-0005',
       qualification: 'B.Sc Computer Science',
       specialization: 'ICT',
@@ -77,13 +74,27 @@ exports.seed = async function(knex) {
       salary: 1700,
       status: 'active'
     }
-  ]);
+  ];
+  
+  teacherData.forEach(teacher => {
+    if (teacher.user_id && !existingTeacherUserIds.includes(teacher.user_id)) {
+      teachersToInsert.push({ ...teacher, school_id: schoolId });
+    }
+  });
+  
+  if (teachersToInsert.length > 0) {
+    await knex('teachers').insert(teachersToInsert);
+  }
+  
+  // Get existing staff user IDs
+  const existingStaff = await knex('staff').select('user_id');
+  const existingStaffUserIds = existingStaff.map(s => s.user_id);
   
   // Staff
-  await knex('staff').insert([
+  const staffToInsert = [];
+  const staffData = [
     {
-      school_id: schoolId,
-      user_id: staffUsers[0].id,
+      user_id: staffUsers[0]?.id,
       employee_id: 'STF-2024-0006',
       department: 'Finance',
       position: 'Accountant',
@@ -92,8 +103,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      school_id: schoolId,
-      user_id: staffUsers[1].id,
+      user_id: staffUsers[1]?.id,
       employee_id: 'STF-2024-0007',
       department: 'Security',
       position: 'Security Officer',
@@ -102,8 +112,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      school_id: schoolId,
-      user_id: staffUsers[2].id,
+      user_id: staffUsers[2]?.id,
       employee_id: 'STF-2024-0008',
       department: 'Administration',
       position: 'Administrative Assistant',
@@ -111,7 +120,17 @@ exports.seed = async function(knex) {
       salary: 900,
       status: 'active'
     }
-  ]);
+  ];
+  
+  staffData.forEach(staff => {
+    if (staff.user_id && !existingStaffUserIds.includes(staff.user_id)) {
+      staffToInsert.push({ ...staff, school_id: schoolId });
+    }
+  });
+  
+  if (staffToInsert.length > 0) {
+    await knex('staff').insert(staffToInsert);
+  }
   
   // Update divisions with principals
   const elementaryPrincipal = await knex('users').where('email', 'principal.elementary@simtechinstitute.edu').first('id');
@@ -119,11 +138,17 @@ exports.seed = async function(knex) {
   const elementaryDivision = await knex('divisions').where('code', 'ELE001').first('id');
   const seniorDivision = await knex('divisions').where('code', 'SHS001').first('id');
   
-  await knex('divisions')
-    .where('id', elementaryDivision.id)
-    .update({ principal_id: elementaryPrincipal.id });
+  if (elementaryPrincipal && elementaryDivision) {
+    await knex('divisions')
+      .where('id', elementaryDivision.id)
+      .update({ principal_id: elementaryPrincipal.id });
+  }
     
-  await knex('divisions')
-    .where('id', seniorDivision.id)
-    .update({ principal_id: seniorPrincipal.id });
+  if (seniorPrincipal && seniorDivision) {
+    await knex('divisions')
+      .where('id', seniorDivision.id)
+      .update({ principal_id: seniorPrincipal.id });
+  }
+  
+  console.log(`Processed ${teachersToInsert.length} new teachers, ${staffToInsert.length} new staff`);
 };

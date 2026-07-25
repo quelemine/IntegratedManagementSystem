@@ -5,25 +5,35 @@ const bcrypt = require('bcryptjs');
  * @returns { Promise<void> }
  */
 exports.seed = async function(knex) {
-  await knex('students').del();
-  
   const hashedPassword = await bcrypt.hash('Student123!', 10);
   
   const schoolId = process.env.SEED_SCHOOL_ID || (await knex('schools').first('id')).id;
   const studentRoleId = process.env.SEED_ROLE_STUDENT_ID || (await knex('roles').where('name', 'student').first('id')).id;
   
+  // Get existing student user emails
+  const existingStudentUsers = await knex('users').where('role_id', studentRoleId).select('email');
+  const existingStudentEmails = existingStudentUsers.map(u => u.email);
+  
   // Get grade IDs
   const grades = await knex('grades').select('id', 'code', 'name', 'division_id');
   
   // Create 20 sample students distributed across grades
-  const students = [];
   let studentCounter = 1;
+  let newStudentsCount = 0;
   
   for (const grade of grades) {
     // Create 2-3 students per grade
     const studentsPerGrade = grade.name.includes('Grade') ? 2 : 3;
     
     for (let i = 0; i < studentsPerGrade; i++) {
+      const email = `student${studentCounter}@simtechinstitute.edu`;
+      
+      // Skip if student user already exists
+      if (existingStudentEmails.includes(email)) {
+        studentCounter++;
+        continue;
+      }
+      
       // Generate student ID based on division and year
       const divisionCode = grade.code.split('-')[0];
       const studentNumber = String(studentCounter).padStart(4, '0');
@@ -32,7 +42,7 @@ exports.seed = async function(knex) {
       // Create user account for student
       const userId = (await knex('users').insert({
         school_id: schoolId,
-        email: `student${studentCounter}@simtechinstitute.edu`,
+        email: email,
         password: hashedPassword,
         role_id: studentRoleId,
         first_name: `Student${studentCounter}`,
@@ -41,7 +51,9 @@ exports.seed = async function(knex) {
         is_active: true
       }).returning('id'))[0].id;
       
-      students.push({
+      // Insert student record
+      await knex('students').insert({
+        school_id: schoolId,
         user_id: userId,
         student_id: generatedId,
         grade_id: grade.id,
@@ -53,15 +65,10 @@ exports.seed = async function(knex) {
         status: 'active'
       });
       
+      newStudentsCount++;
       studentCounter++;
     }
   }
   
-  // Insert students
-  for (const student of students) {
-    await knex('students').insert({
-      school_id: schoolId,
-      ...student
-    });
-  }
+  console.log(`Processed ${newStudentsCount} new sample students`);
 };

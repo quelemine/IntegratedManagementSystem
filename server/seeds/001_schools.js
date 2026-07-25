@@ -5,7 +5,15 @@ const bcrypt = require('bcryptjs');
  * @returns { Promise<void> }
  */
 exports.seed = async function(knex) {
-  await knex('schools').del();
+  // Check if school already exists
+  const existingSchool = await knex('schools').where('code', 'SIM001').first();
+  
+  if (existingSchool) {
+    // Store existing school ID for use in other seeds
+    process.env.SEED_SCHOOL_ID = existingSchool.id;
+    console.log('School already exists, skipping insert');
+    return;
+  }
   
   const schoolId = (await knex('schools').insert({
     name: 'SIM Technology Institute',
@@ -26,4 +34,5 @@ exports.seed = async function(knex) {
   
   // Store the school ID for use in other seeds
   process.env.SEED_SCHOOL_ID = schoolId;
+  console.log('School created successfully');
 };

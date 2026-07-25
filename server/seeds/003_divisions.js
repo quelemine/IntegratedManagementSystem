@@ -3,11 +3,14 @@
  * @returns { Promise<void> }
  */
 exports.seed = async function(knex) {
-  await knex('divisions').del();
-  
   const schoolId = process.env.SEED_SCHOOL_ID || (await knex('schools').first('id')).id;
+  const divisionCodes = ['KG001', 'ELE001', 'JHS001', 'SHS001'];
   
-  const divisions = await knex('divisions').insert([
+  // Check which divisions already exist
+  const existingDivisions = await knex('divisions').where('school_id', schoolId).whereIn('code', divisionCodes).select('code', 'id');
+  const existingCodes = existingDivisions.map(d => d.code);
+  
+  const divisionsToInsert = [
     {
       school_id: schoolId,
       name: 'Kindergarten',
@@ -32,12 +35,20 @@ exports.seed = async function(knex) {
       code: 'SHS001',
       level: 'senior_high'
     }
-  ]).returning('id');
+  ].filter(division => !existingCodes.includes(division.code));
+  
+  // Insert only new divisions
+  if (divisionsToInsert.length > 0) {
+    await knex('divisions').insert(divisionsToInsert);
+  }
+  
+  // Get all divisions (existing + newly inserted)
+  const allDivisions = await knex('divisions').where('school_id', schoolId).whereIn('code', divisionCodes).select('id', 'code');
   
   // Store division IDs for use in other seeds
-  const divisionNames = ['Kindergarten', 'Elementary School', 'Junior High School', 'Senior High School'];
-  const divisionCodes = ['KG001', 'ELE001', 'JHS001', 'SHS001'];
-  divisions.forEach((division, index) => {
-    process.env[`SEED_DIVISION_${divisionCodes[index]}_ID`] = division.id;
+  allDivisions.forEach((division) => {
+    process.env[`SEED_DIVISION_${division.code}_ID`] = division.id;
   });
+  
+  console.log(`Processed ${allDivisions.length} divisions (${divisionsToInsert.length} new)`);
 };

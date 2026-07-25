@@ -3,9 +3,13 @@
  * @returns { Promise<void> }
  */
 exports.seed = async function(knex) {
-  await knex('roles').del();
+  const roleNames = ['super_admin', 'principal', 'teacher', 'parent', 'student', 'tutor', 'staff'];
   
-  const roles = await knex('roles').insert([
+  // Check which roles already exist
+  const existingRoles = await knex('roles').whereIn('name', roleNames).select('name', 'id');
+  const existingRoleNames = existingRoles.map(r => r.name);
+  
+  const rolesToInsert = [
     {
       name: 'super_admin',
       permissions: JSON.stringify(['all']),
@@ -41,11 +45,20 @@ exports.seed = async function(knex) {
       permissions: JSON.stringify(['attendance_manage', 'tasks_view']),
       description: 'School staff member'
     }
-  ]).returning('id');
+  ].filter(role => !existingRoleNames.includes(role.name));
+  
+  // Insert only new roles
+  if (rolesToInsert.length > 0) {
+    await knex('roles').insert(rolesToInsert);
+  }
+  
+  // Get all roles (existing + newly inserted)
+  const allRoles = await knex('roles').whereIn('name', roleNames).select('id', 'name');
   
   // Store role IDs for use in other seeds
-  const roleNames = ['super_admin', 'principal', 'teacher', 'parent', 'student', 'tutor', 'staff'];
-  roles.forEach((role, index) => {
-    process.env[`SEED_ROLE_${roleNames[index].toUpperCase()}_ID`] = role.id;
+  allRoles.forEach((role) => {
+    process.env[`SEED_ROLE_${role.name.toUpperCase()}_ID`] = role.id;
   });
+  
+  console.log(`Processed ${allRoles.length} roles (${rolesToInsert.length} new)`);
 };

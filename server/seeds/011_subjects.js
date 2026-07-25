@@ -3,9 +3,11 @@
  * @returns { Promise<void> }
  */
 exports.seed = async function(knex) {
-  await knex('subjects').del();
-  
   const schoolId = process.env.SEED_SCHOOL_ID || (await knex('schools').first('id')).id;
+  
+  // Get existing subject codes
+  const existingSubjects = await knex('subjects').where('school_id', schoolId).select('code');
+  const existingCodes = existingSubjects.map(s => s.code);
   
   const subjects = [
     { name: 'English', code: 'ENG', description: 'English Language and Literature', credit_hours: 5 },
@@ -25,10 +27,17 @@ exports.seed = async function(knex) {
     { name: 'Economics', code: 'ECON', description: 'Economics', credit_hours: 3 }
   ];
   
-  for (const subject of subjects) {
-    await knex('subjects').insert({
-      school_id: schoolId,
-      ...subject
-    });
+  const subjectsToInsert = subjects.filter(subject => !existingCodes.includes(subject.code));
+  
+  // Insert only new subjects
+  if (subjectsToInsert.length > 0) {
+    for (const subject of subjectsToInsert) {
+      await knex('subjects').insert({
+        school_id: schoolId,
+        ...subject
+      });
+    }
   }
+  
+  console.log(`Processed ${subjectsToInsert.length} new subjects`);
 };

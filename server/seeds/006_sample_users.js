@@ -13,8 +13,14 @@ exports.seed = async function(knex) {
   const parentRoleId = process.env.SEED_ROLE_PARENT_ID || (await knex('roles').where('name', 'parent').first('id')).id;
   const staffRoleId = process.env.SEED_ROLE_STAFF_ID || (await knex('roles').where('name', 'staff').first('id')).id;
   
+  // Get existing user emails
+  const existingUsers = await knex('users').where('school_id', schoolId).select('email');
+  const existingEmails = existingUsers.map(u => u.email);
+  
+  const usersToInsert = [];
+  
   // Principals
-  await knex('users').insert([
+  const principals = [
     {
       school_id: schoolId,
       email: 'principal.elementary@simtechinstitute.edu',
@@ -35,7 +41,12 @@ exports.seed = async function(knex) {
       phone: '+231880857971',
       is_active: true
     }
-  ]);
+  ];
+  principals.forEach(user => {
+    if (!existingEmails.includes(user.email)) {
+      usersToInsert.push(user);
+    }
+  });
   
   // Teachers
   const teachers = [
@@ -47,34 +58,40 @@ exports.seed = async function(knex) {
   ];
   
   for (let i = 0; i < teachers.length; i++) {
-    await knex('users').insert({
-      school_id: schoolId,
-      email: `teacher.${teachers[i].first.toLowerCase()}@simtechinstitute.edu`,
-      password: hashedPassword,
-      role_id: teacherRoleId,
-      first_name: teachers[i].first,
-      last_name: teachers[i].last,
-      phone: `+231880857${972 + i}`,
-      is_active: true
-    });
+    const email = `teacher.${teachers[i].first.toLowerCase()}@simtechinstitute.edu`;
+    if (!existingEmails.includes(email)) {
+      usersToInsert.push({
+        school_id: schoolId,
+        email: email,
+        password: hashedPassword,
+        role_id: teacherRoleId,
+        first_name: teachers[i].first,
+        last_name: teachers[i].last,
+        phone: `+231880857${972 + i}`,
+        is_active: true
+      });
+    }
   }
   
   // Parents
   for (let i = 0; i < 10; i++) {
-    await knex('users').insert({
-      school_id: schoolId,
-      email: `parent${i + 1}@simtechinstitute.edu`,
-      password: hashedPassword,
-      role_id: parentRoleId,
-      first_name: `Parent${i + 1}`,
-      last_name: `Surname${i + 1}`,
-      phone: `+231880857${977 + i}`,
-      is_active: true
-    });
+    const email = `parent${i + 1}@simtechinstitute.edu`;
+    if (!existingEmails.includes(email)) {
+      usersToInsert.push({
+        school_id: schoolId,
+        email: email,
+        password: hashedPassword,
+        role_id: parentRoleId,
+        first_name: `Parent${i + 1}`,
+        last_name: `Surname${i + 1}`,
+        phone: `+231880857${977 + i}`,
+        is_active: true
+      });
+    }
   }
   
   // Staff
-  await knex('users').insert([
+  const staff = [
     {
       school_id: schoolId,
       email: 'accountant@simtechinstitute.edu',
@@ -105,5 +122,17 @@ exports.seed = async function(knex) {
       phone: '+231880857989',
       is_active: true
     }
-  ]);
+  ];
+  staff.forEach(user => {
+    if (!existingEmails.includes(user.email)) {
+      usersToInsert.push(user);
+    }
+  });
+  
+  // Insert only new users
+  if (usersToInsert.length > 0) {
+    await knex('users').insert(usersToInsert);
+  }
+  
+  console.log(`Processed ${usersToInsert.length} new sample users`);
 };

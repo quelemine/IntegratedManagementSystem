@@ -3,13 +3,11 @@
  * @returns { Promise<void> }
  */
 exports.seed = async function(knex) {
-  await knex('student_grades').del();
-  
   const schoolId = process.env.SEED_SCHOOL_ID || (await knex('schools').first('id')).id;
   
   // Get students and courses
   const students = await knex('students').limit(15).select('id');
-  const courses = await knex('courses').select('id');
+  let courses = await knex('courses').select('id');
   
   // Get a teacher user for graded_by
   const teacherUser = await knex('users').where('email', 'like', 'teacher.%').first('id');
@@ -34,12 +32,20 @@ exports.seed = async function(knex) {
     }
     
     // Get courses again
-    courses.push(...await knex('courses').select('id'));
+    courses = await knex('courses').select('id');
   }
   
+  // Get existing student grades to avoid duplicates
+  const existingGrades = await knex('student_grades').select('student_id', 'course_id');
+  const existingKeys = existingGrades.map(g => `${g.student_id}-${g.course_id}`);
+  
   // Generate sample grades
+  let newGradesCount = 0;
   for (const student of students) {
     for (const course of courses) {
+      const key = `${student.id}-${course.id}`;
+      if (existingKeys.includes(key)) continue;
+      
       const score = Math.floor(Math.random() * 30) + 70; // 70-100
       let letterGrade = 'A';
       if (score < 80) letterGrade = 'B';
@@ -59,6 +65,10 @@ exports.seed = async function(knex) {
         academic_year: '2024-2025',
         graded_by: teacherUser ? teacherUser.id : null
       });
+      
+      newGradesCount++;
     }
   }
+  
+  console.log(`Processed ${newGradesCount} new student grades`);
 };

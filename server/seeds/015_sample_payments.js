@@ -3,9 +3,6 @@
  * @returns { Promise<void> }
  */
 exports.seed = async function(knex) {
-  await knex('tuition_fees').del();
-  await knex('payments').del();
-  
   const schoolId = process.env.SEED_SCHOOL_ID || (await knex('schools').first('id')).id;
   
   // Get students and create tuition fees
@@ -15,11 +12,18 @@ exports.seed = async function(knex) {
   // Get a staff user for recorded_by
   const staffUser = await knex('users').where('email', 'accountant@simtechinstitute.edu').first('id');
   
+  // Get existing tuition fees to avoid duplicates
+  const existingTuitionFees = await knex('tuition_fees').select('grade_id');
+  const existingGradeIds = existingTuitionFees.map(f => f.grade_id);
+  
   // Create tuition fees for each division
+  let newTuitionFeesCount = 0;
   for (const division of divisions) {
     const grades = await knex('grades').where('division_id', division.id).select('id');
     
     for (const grade of grades) {
+      if (existingGradeIds.includes(grade.id)) continue;
+      
       await knex('tuition_fees').insert({
         school_id: schoolId,
         division_id: division.id,
@@ -30,16 +34,26 @@ exports.seed = async function(knex) {
         academic_year: '2024-2025',
         description: 'Annual tuition fee'
       });
+      
+      newTuitionFeesCount++;
     }
   }
   
+  // Get existing payments to avoid duplicates
+  const existingPayments = await knex('payments').select('student_id', 'tuition_fee_id');
+  const existingPaymentKeys = existingPayments.map(p => `${p.student_id}-${p.tuition_fee_id}`);
+  
   // Generate sample payments
+  let newPaymentsCount = 0;
   for (const student of students) {
     const tuitionFee = await knex('tuition_fees')
       .where('grade_id', student.grade_id)
       .first();
     
     if (tuitionFee) {
+      const key = `${student.id}-${tuitionFee.id}`;
+      if (existingPaymentKeys.includes(key)) continue;
+      
       const amount = tuitionFee.amount * 0.25; // 25% payment
       const paymentMethods = ['Cash', 'Mobile Money', 'Bank Transfer'];
       
@@ -57,6 +71,10 @@ exports.seed = async function(knex) {
         status: 'completed',
         recorded_by: staffUser ? staffUser.id : null
       });
+      
+      newPaymentsCount++;
     }
   }
+  
+  console.log(`Processed ${newTuitionFeesCount} new tuition fees, ${newPaymentsCount} new payments`);
 };
