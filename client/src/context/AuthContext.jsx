@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
 const AuthContext = createContext(null)
 
 export const useAuth = () => {
@@ -31,7 +33,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUnreadCount = async (token) => {
     try {
-      const response = await axios.get('/api/notifications/unread-count', {
+      const response = await axios.get(`${API_URL}/notifications/unread-count`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setUnreadCount(response.data.data.count)
@@ -42,7 +44,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password })
+      const response = await axios.post(`${API_URL}/auth/login`, { email, password })
       const { user: userData, token } = response.data.data
       
       localStorage.setItem('token', token)
