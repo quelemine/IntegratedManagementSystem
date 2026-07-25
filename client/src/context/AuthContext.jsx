@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import axios from 'axios'
+import axios from '../utils/axios'
 import { useNavigate } from 'react-router-dom'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const AuthContext = createContext(null)
 
@@ -26,16 +24,14 @@ export const AuthProvider = ({ children }) => {
     
     if (token && userData) {
       setUser(JSON.parse(userData))
-      fetchUnreadCount(token)
+      fetchUnreadCount()
     }
     setLoading(false)
   }, [])
 
-  const fetchUnreadCount = async (token) => {
+  const fetchUnreadCount = async () => {
     try {
-      const response = await axios.get(`${API_URL}/notifications/unread-count`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const response = await axios.get('/notifications/unread-count')
       setUnreadCount(response.data.data.count)
     } catch (error) {
       console.error('Error fetching unread count:', error)
@@ -44,13 +40,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, { email, password })
+      const response = await axios.post('/auth/login', { email, password })
       const { user: userData, token } = response.data.data
       
       localStorage.setItem('token', token)
       localStorage.setItem('user', JSON.stringify(userData))
       setUser(userData)
-      fetchUnreadCount(token)
+      fetchUnreadCount()
       
       return { success: true }
     } catch (error) {
