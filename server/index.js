@@ -11,8 +11,9 @@ const { logRequest } = require('./utils/logger');
 
 const app = express();
 
-// Trust proxy for Render/Railway (required for rate limiting)
-app.set('trust proxy', true);
+// Trust proxy for Render (required for rate limiting)
+// Trust exactly 1 proxy (Render's load balancer)
+app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
