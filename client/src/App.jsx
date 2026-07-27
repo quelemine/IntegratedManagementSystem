@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
+import HelpDesk from './components/HelpDesk'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
@@ -33,29 +34,29 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/students" element={<Students />} />
-            <Route path="/teachers" element={<Teachers />} />
-            <Route path="/parents" element={<Parents />} />
-            <Route path="/classes" element={<Classes />} />
-            <Route path="/divisions" element={<Divisions />} />
-            <Route path="/grades" element={<Grades />} />
-            <Route path="/schools" element={<Schools />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/attendance" element={<Attendance />} />
-            <Route path="/assignments" element={<Assignments />} />
-            <Route path="/quizzes" element={<Quizzes />} />
-            <Route path="/grade-report" element={<GradeReport />} />
-            <Route path="/fees" element={<Fees />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/financial-reports" element={<FinancialReports />} />
-            <Route path="/inbox" element={<Inbox />} />
-            <Route path="/messages/:id" element={<MessageView />} />
-            <Route path="/messages/compose" element={<ComposeMessage />} />
-            <Route path="/announcements" element={<Announcements />} />
-            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/dashboard" element={<><Dashboard /><HelpDesk /></>} />
+            <Route path="/profile" element={<><Profile /><HelpDesk /></>} />
+            <Route path="/students" element={<><Students /><HelpDesk /></>} />
+            <Route path="/teachers" element={<><Teachers /><HelpDesk /></>} />
+            <Route path="/parents" element={<><Parents /><HelpDesk /></>} />
+            <Route path="/classes" element={<><Classes /><HelpDesk /></>} />
+            <Route path="/divisions" element={<><Divisions /><HelpDesk /></>} />
+            <Route path="/grades" element={<><Grades /><HelpDesk /></>} />
+            <Route path="/schools" element={<><Schools /><HelpDesk /></>} />
+            <Route path="/users" element={<><Users /><HelpDesk /></>} />
+            <Route path="/attendance" element={<><Attendance /><HelpDesk /></>} />
+            <Route path="/assignments" element={<><Assignments /><HelpDesk /></>} />
+            <Route path="/quizzes" element={<><Quizzes /><HelpDesk /></>} />
+            <Route path="/grade-report" element={<><GradeReport /><HelpDesk /></>} />
+            <Route path="/fees" element={<><Fees /><HelpDesk /></>} />
+            <Route path="/invoices" element={<><Invoices /><HelpDesk /></>} />
+            <Route path="/payments" element={<><Payments /><HelpDesk /></>} />
+            <Route path="/financial-reports" element={<><FinancialReports /><HelpDesk /></>} />
+            <Route path="/inbox" element={<><Inbox /><HelpDesk /></>} />
+            <Route path="/messages/:id" element={<><MessageView /><HelpDesk /></>} />
+            <Route path="/messages/compose" element={<><ComposeMessage /><HelpDesk /></>} />
+            <Route path="/announcements" element={<><Announcements /><HelpDesk /></>} />
+            <Route path="/notifications" element={<><Notifications /><HelpDesk /></>} />
           </Routes>
         </AuthProvider>
       </Router>

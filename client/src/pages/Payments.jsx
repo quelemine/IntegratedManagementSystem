@@ -7,11 +7,13 @@ export default function Payments() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [paymentType, setPaymentType] = useState('system'); // 'system' or 'external'
   const [formData, setFormData] = useState({
     invoice_id: '',
     amount_paid: '',
     payment_method: 'cash',
     transaction_reference: '',
+    receipt_number: '',
     notes: ''
   });
 
@@ -36,11 +38,13 @@ export default function Payments() {
     try {
       await axios.post('/payments', formData);
       setShowModal(false);
+      setPaymentType('system');
       setFormData({
         invoice_id: '',
         amount_paid: '',
         payment_method: 'cash',
         transaction_reference: '',
+        receipt_number: '',
         notes: ''
       });
       fetchPayments();
@@ -73,10 +77,22 @@ export default function Payments() {
         <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold">Payment Management</h1>
           <button
-            onClick={() => setShowModal(true)}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            onClick={() => {
+              setShowModal(true)
+              setPaymentType('system')
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mr-2"
           >
             Record Payment
+          </button>
+          <button
+            onClick={() => {
+              setShowModal(true)
+              setPaymentType('external')
+            }}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            External Payment
           </button>
         </div>
       </div>
@@ -132,63 +148,135 @@ export default function Payments() {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-4">Record Payment</h2>
+            <h2 className="text-2xl font-bold mb-4">
+              {paymentType === 'system' ? 'Record Payment' : 'External Payment Entry'}
+            </h2>
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Invoice ID</label>
-                <input
-                  type="text"
-                  value={formData.invoice_id}
-                  onChange={(e) => setFormData({ ...formData, invoice_id: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Amount</label>
-                <input
-                  type="number"
-                  value={formData.amount_paid}
-                  onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Payment Method</label>
-                <select
-                  value={formData.payment_method}
-                  onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
-                >
-                  <option value="cash">Cash</option>
-                  <option value="bank">Bank Transfer</option>
-                  <option value="mobile_money">Mobile Money</option>
-                  <option value="online">Online Payment</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Transaction Reference</label>
-                <input
-                  type="text"
-                  value={formData.transaction_reference}
-                  onChange={(e) => setFormData({ ...formData, transaction_reference: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
-                  rows="3"
-                />
-              </div>
+              {paymentType === 'system' ? (
+                <>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Invoice ID</label>
+                    <input
+                      type="text"
+                      value={formData.invoice_id}
+                      onChange={(e) => setFormData({ ...formData, invoice_id: e.target.value })}
+                      className="w-full px-3 py-2 border rounded"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Amount</label>
+                    <input
+                      type="number"
+                      value={formData.amount_paid}
+                      onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
+                      className="w-full px-3 py-2 border rounded"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Payment Method</label>
+                    <select
+                      value={formData.payment_method}
+                      onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                      className="w-full px-3 py-2 border rounded"
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="bank">Bank Transfer</option>
+                      <option value="mobile_money">Mobile Money</option>
+                      <option value="online">Online Payment</option>
+                    </select>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Transaction Reference</label>
+                    <input
+                      type="text"
+                      value={formData.transaction_reference}
+                      onChange={(e) => setFormData({ ...formData, transaction_reference: e.target.value })}
+                      className="w-full px-3 py-2 border rounded"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Notes</label>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="w-full px-3 py-2 border rounded"
+                      rows="3"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mb-4 p-3 bg-blue-50 rounded text-sm text-blue-700">
+                    <p className="font-semibold">External Payment</p>
+                    <p>Use this when payment was made outside the system (e.g., bank, cash office)</p>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Receipt Number *</label>
+                    <input
+                      type="text"
+                      value={formData.receipt_number}
+                      onChange={(e) => setFormData({ ...formData, receipt_number: e.target.value })}
+                      className="w-full px-3 py-2 border rounded"
+                      required
+                      placeholder="Enter receipt number from external source"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Amount *</label>
+                    <input
+                      type="number"
+                      value={formData.amount_paid}
+                      onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
+                      className="w-full px-3 py-2 border rounded"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Payment Method *</label>
+                    <select
+                      value={formData.payment_method}
+                      onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                      className="w-full px-3 py-2 border rounded"
+                      required
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="bank">Bank Transfer</option>
+                      <option value="mobile_money">Mobile Money</option>
+                      <option value="check">Check</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Transaction Reference</label>
+                    <input
+                      type="text"
+                      value={formData.transaction_reference}
+                      onChange={(e) => setFormData({ ...formData, transaction_reference: e.target.value })}
+                      className="w-full px-3 py-2 border rounded"
+                      placeholder="Bank reference, check number, etc."
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 mb-2">Notes</label>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="w-full px-3 py-2 border rounded"
+                      rows="3"
+                      placeholder="Additional details about the payment"
+                    />
+                  </div>
+                </>
+              )}
               <div className="flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setShowModal(false)
+                    setPaymentType('system')
+                  }}
                   className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
                 >
                   Cancel
@@ -197,7 +285,7 @@ export default function Payments() {
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
-                  Record Payment
+                  {paymentType === 'system' ? 'Record Payment' : 'Add External Payment'}
                 </button>
               </div>
             </form>

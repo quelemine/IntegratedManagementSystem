@@ -45,7 +45,7 @@ export default function Fees() {
       }
 
       const response = await axios.get(endpoint);
-      setData(response.data.data);
+      setData(response.data.success ? response.data.data : response.data.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
