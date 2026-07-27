@@ -230,6 +230,45 @@ function Dashboard() {
               >
                 My Invoices
               </button>
+              <button
+                onClick={() => navigate('/payments')}
+                className="bg-fuchsia-600 text-white px-4 py-3 rounded-md hover:bg-fuchsia-700"
+              >
+                My Payments
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Student Only - Academic Progress */}
+        {user.role === 'student' && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">Academic Progress</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <button
+                onClick={() => navigate('/grade-report')}
+                className="bg-rose-600 text-white px-4 py-3 rounded-md hover:bg-rose-700"
+              >
+                My Grades
+              </button>
+              <button
+                onClick={() => navigate('/assignments')}
+                className="bg-amber-600 text-white px-4 py-3 rounded-md hover:bg-amber-700"
+              >
+                My Assignments
+              </button>
+              <button
+                onClick={() => navigate('/attendance')}
+                className="bg-cyan-600 text-white px-4 py-3 rounded-md hover:bg-cyan-700"
+              >
+                My Attendance
+              </button>
+              <button
+                onClick={() => navigate('/quizzes')}
+                className="bg-lime-600 text-white px-4 py-3 rounded-md hover:bg-lime-700"
+              >
+                My Quizzes
+              </button>
             </div>
           </div>
         )}

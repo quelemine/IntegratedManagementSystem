@@ -31,15 +31,23 @@ export default function MessageView() {
     e.preventDefault();
     if (!replyText.trim()) return;
 
+    console.log('[Reply] Original message ID:', message.id);
+    console.log('[Reply] Original sender_id:', message.sender_id);
+    console.log('[Reply] Original sender name:', message.sender_first_name, message.sender_last_name);
+    console.log('[Reply] Original receiver_id:', message.receiver_id);
+    console.log('[Reply] Reply will be sent to receiver_id:', message.sender_id);
+
     try {
-      await axios.post('/messages', {
+      const response = await axios.post('/messages', {
         receiver_id: message.sender_id,
         content: replyText
       });
+      console.log('[Reply] Reply sent successfully:', response.data);
       setReplyText('');
       alert('Reply sent successfully');
     } catch (error) {
-      console.error('Error sending reply:', error);
+      console.error('[Reply] Error sending reply:', error);
+      console.error('[Reply] Error response:', error.response?.data);
       alert('Failed to send reply');
     }
   };

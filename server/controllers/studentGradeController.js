@@ -7,6 +7,34 @@ const getStudentGrades = async (req, res) => {
   try {
     const { student_id, course_id, term, academic_year } = req.query;
     const schoolId = req.user.school_id;
+    const userRole = req.user.role;
+
+    // If user is a student, they can only see their own grades
+    let targetStudentId = student_id;
+    if (userRole === 'student') {
+      // Get the student record for this user
+      const studentRecord = await db('students')
+        .where('user_id', req.user.id)
+        .where('school_id', schoolId)
+        .first();
+      
+      if (!studentRecord) {
+        return res.status(404).json({
+          success: false,
+          error: 'Student record not found'
+        });
+      }
+      
+      targetStudentId = studentRecord.id;
+      
+      // If student_id was provided and doesn't match, deny access
+      if (student_id && student_id !== targetStudentId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied. Students can only view their own grades.'
+        });
+      }
+    }
 
     let query = db('student_grades')
       .select(
@@ -35,8 +63,8 @@ const getStudentGrades = async (req, res) => {
       .leftJoin('quizzes', 'student_grades.quiz_id', 'quizzes.id')
       .where('student_grades.school_id', schoolId);
 
-    if (student_id) {
-      query = query.where('student_grades.student_id', student_id);
+    if (targetStudentId) {
+      query = query.where('student_grades.student_id', targetStudentId);
     }
 
     if (course_id) {
