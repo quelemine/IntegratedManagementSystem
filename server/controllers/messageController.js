@@ -86,8 +86,14 @@ const createMessage = async (req, res) => {
     const { receiver_id, content } = req.body;
     const sender_id = req.user.id;
     const schoolId = req.user.school_id;
+    const sender_name = `${req.user.first_name} ${req.user.last_name}`;
+
+    console.log('[Message] Creating message - sender_id:', sender_id, 'sender_name:', sender_name);
+    console.log('[Message] receiver_id:', receiver_id);
+    console.log('[Message] content:', content);
 
     if (!receiver_id || !content) {
+      console.error('[Message] Missing receiver_id or content');
       return res.status(400).json({ success: false, error: 'Receiver ID and content are required' });
     }
 
@@ -98,8 +104,11 @@ const createMessage = async (req, res) => {
       .first();
 
     if (!receiver) {
+      console.error('[Message] Receiver not found:', receiver_id);
       return res.status(404).json({ success: false, error: 'Receiver not found' });
     }
+
+    console.log('[Message] Receiver found:', receiver.id, receiver.first_name, receiver.last_name);
 
     const [message] = await db('messages').insert({
       school_id: schoolId,
@@ -109,20 +118,29 @@ const createMessage = async (req, res) => {
       is_read: false
     }).returning('*');
 
+    console.log('[Message] Message created with ID:', message.id);
+
     // Create notification for receiver
-    await db('notifications').insert({
-      user_id: receiver_id,
-      title: 'New Message',
-      message: `You have received a new message.`,
-      type: 'message',
-      reference_id: message.id,
-      reference_type: 'message',
-      is_read: false
-    });
+    try {
+      const [notification] = await db('notifications').insert({
+        user_id: receiver_id,
+        title: 'New Message',
+        message: `${sender_name} sent you a message: ${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+        type: 'message',
+        reference_id: message.id,
+        reference_type: 'message',
+        is_read: false
+      }).returning('*');
+
+      console.log('[Message] Notification created with ID:', notification.id, 'for user:', receiver_id);
+    } catch (notifError) {
+      console.error('[Message] Failed to create notification:', notifError);
+      // Don't fail the request if notification creation fails
+    }
 
     res.status(201).json({ success: true, data: message });
   } catch (error) {
-    console.error('Create message error:', error);
+    console.error('[Message] Create message error:', error);
     res.status(500).json({ success: false, error: 'Failed to create message' });
   }
 };

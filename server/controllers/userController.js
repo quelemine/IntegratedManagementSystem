@@ -3,6 +3,47 @@ const db = require('../config/database');
 const { logAction } = require('../middleware/audit');
 
 /**
+ * Generate email from name (first initial + last name)
+ * Example: John Doe → jdoe@simtechinstitute.edu
+ */
+const generateEmailFromName = (firstName, lastName, schoolDomain = 'simtechinstitute.edu') => {
+  // Get first initial (first character of first name)
+  const firstInitial = firstName.charAt(0).toLowerCase();
+  
+  // Get last name (lowercase, remove spaces/special characters)
+  const cleanLastName = lastName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  
+  // Combine: first initial + last name
+  const emailPrefix = `${firstInitial}${cleanLastName}`;
+  
+  return `${emailPrefix}@${schoolDomain}`;
+};
+
+/**
+ * Generate unique email from name (handles duplicates)
+ */
+const generateUniqueEmail = async (firstName, lastName, schoolDomain = 'simtechinstitute.edu') => {
+  let baseEmail = generateEmailFromName(firstName, lastName, schoolDomain);
+  let email = baseEmail;
+  let counter = 1;
+  
+  // Check if email exists and add number if needed
+  while (true) {
+    const existingUser = await db('users').where('email', email).first();
+    if (!existingUser) {
+      break;
+    }
+    
+    // Add number to email
+    const cleanLastName = lastName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    email = `${firstName.charAt(0).toLowerCase()}${cleanLastName}${counter}@${schoolDomain}`;
+    counter++;
+  }
+  
+  return email;
+};
+
+/**
  * Get all users (school-scoped)
  */
 const getUsers = async (req, res) => {
@@ -97,8 +138,14 @@ const createUser = async (req, res) => {
   try {
     const { email, password, first_name, last_name, phone, role_id, school_id } = req.body;
 
+    // Generate email if not provided
+    let userEmail = email;
+    if (!userEmail) {
+      userEmail = await generateUniqueEmail(first_name, last_name);
+    }
+
     // Check if email already exists
-    const existingUser = await db('users').where('email', email).first();
+    const existingUser = await db('users').where('email', userEmail).first();
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
     }
@@ -108,7 +155,7 @@ const createUser = async (req, res) => {
 
     // Create user
     const [userId] = await db('users').insert({
-      email,
+      email: userEmail,
       password: hashedPassword,
       first_name,
       last_name,
@@ -119,11 +166,11 @@ const createUser = async (req, res) => {
     }).returning('id');
 
     // Log creation
-    await logAction(school_id || req.user.school_id, userId, 'create', 'user', userId, null, { email, first_name, last_name }, req.ip, req.headers['user-agent']);
+    await logAction(school_id || req.user.school_id, userId, 'create', 'user', userId, null, { email: userEmail, first_name, last_name }, req.ip, req.headers['user-agent']);
 
     res.status(201).json({
       message: 'User created successfully',
-      data: { id: userId, email, first_name, last_name }
+      data: { id: userId, email: userEmail, first_name, last_name }
     });
   } catch (error) {
     console.error('Create user error:', error);

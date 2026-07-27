@@ -90,120 +90,151 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => navigate('/students')}
-              className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700"
-            >
-              Students
-            </button>
-            <button
-              onClick={() => navigate('/teachers')}
-              className="bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700"
-            >
-              Teachers
-            </button>
-            <button
-              onClick={() => navigate('/parents')}
-              className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700"
-            >
-              Parents
-            </button>
-            <button
-              onClick={() => navigate('/classes')}
-              className="bg-orange-600 text-white px-4 py-3 rounded-md hover:bg-orange-700"
-            >
-              Classes
-            </button>
-            <button
-              onClick={() => navigate('/divisions')}
-              className="bg-pink-600 text-white px-4 py-3 rounded-md hover:bg-pink-700"
-            >
-              Divisions
-            </button>
-            <button
-              onClick={() => navigate('/grades')}
-              className="bg-teal-600 text-white px-4 py-3 rounded-md hover:bg-teal-700"
-            >
-              Grades
-            </button>
-            <button
-              onClick={() => navigate('/schools')}
-              className="bg-indigo-600 text-white px-4 py-3 rounded-md hover:bg-indigo-700"
-            >
-              Schools
-            </button>
-            <button
-              onClick={() => navigate('/users')}
-              className="bg-red-600 text-white px-4 py-3 rounded-md hover:bg-red-700"
-            >
-              Users
-            </button>
+        {/* Admin/Principal Only - User & School Management */}
+        {(user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">User & School Management</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <button
+                onClick={() => navigate('/students')}
+                className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700"
+              >
+                Students
+              </button>
+              <button
+                onClick={() => navigate('/teachers')}
+                className="bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700"
+              >
+                Teachers
+              </button>
+              <button
+                onClick={() => navigate('/parents')}
+                className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700"
+              >
+                Parents
+              </button>
+              <button
+                onClick={() => navigate('/classes')}
+                className="bg-orange-600 text-white px-4 py-3 rounded-md hover:bg-orange-700"
+              >
+                Classes
+              </button>
+              <button
+                onClick={() => navigate('/divisions')}
+                className="bg-pink-600 text-white px-4 py-3 rounded-md hover:bg-pink-700"
+              >
+                Divisions
+              </button>
+              <button
+                onClick={() => navigate('/grades')}
+                className="bg-teal-600 text-white px-4 py-3 rounded-md hover:bg-teal-700"
+              >
+                Grades
+              </button>
+              <button
+                onClick={() => navigate('/schools')}
+                className="bg-indigo-600 text-white px-4 py-3 rounded-md hover:bg-indigo-700"
+              >
+                Schools
+              </button>
+              <button
+                onClick={() => navigate('/users')}
+                className="bg-red-600 text-white px-4 py-3 rounded-md hover:bg-red-700"
+              >
+                Users
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold mb-4">Academic Management</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button
-              onClick={() => navigate('/attendance')}
-              className="bg-cyan-600 text-white px-4 py-3 rounded-md hover:bg-cyan-700"
-            >
-              Attendance
-            </button>
-            <button
-              onClick={() => navigate('/assignments')}
-              className="bg-amber-600 text-white px-4 py-3 rounded-md hover:bg-amber-700"
-            >
-              Assignments
-            </button>
-            <button
-              onClick={() => navigate('/quizzes')}
-              className="bg-lime-600 text-white px-4 py-3 rounded-md hover:bg-lime-700"
-            >
-              Quizzes
-            </button>
-            <button
-              onClick={() => navigate('/grade-report')}
-              className="bg-rose-600 text-white px-4 py-3 rounded-md hover:bg-rose-700"
-            >
-              Grade Reports
-            </button>
+        {/* Teacher Only - Academic Management */}
+        {(user.role === 'teacher' || user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">Academic Management</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button
+                onClick={() => navigate('/attendance')}
+                className="bg-cyan-600 text-white px-4 py-3 rounded-md hover:bg-cyan-700"
+              >
+                Attendance
+              </button>
+              <button
+                onClick={() => navigate('/assignments')}
+                className="bg-amber-600 text-white px-4 py-3 rounded-md hover:bg-amber-700"
+              >
+                Assignments
+              </button>
+              <button
+                onClick={() => navigate('/quizzes')}
+                className="bg-lime-600 text-white px-4 py-3 rounded-md hover:bg-lime-700"
+              >
+                Quizzes
+              </button>
+              <button
+                onClick={() => navigate('/grade-report')}
+                className="bg-rose-600 text-white px-4 py-3 rounded-md hover:bg-rose-700"
+              >
+                Grade Reports
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold mb-4">Financial Management</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button
-              onClick={() => navigate('/fees')}
-              className="bg-emerald-600 text-white px-4 py-3 rounded-md hover:bg-emerald-700"
-            >
-              Fees
-            </button>
-            <button
-              onClick={() => navigate('/invoices')}
-              className="bg-violet-600 text-white px-4 py-3 rounded-md hover:bg-violet-700"
-            >
-              Invoices
-            </button>
-            <button
-              onClick={() => navigate('/payments')}
-              className="bg-fuchsia-600 text-white px-4 py-3 rounded-md hover:bg-fuchsia-700"
-            >
-              Payments
-            </button>
-            <button
-              onClick={() => navigate('/financial-reports')}
-              className="bg-slate-600 text-white px-4 py-3 rounded-md hover:bg-slate-700"
-            >
-              Reports
-            </button>
+        {/* Admin/Principal Only - Financial Management */}
+        {(user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">Financial Management</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button
+                onClick={() => navigate('/fees')}
+                className="bg-emerald-600 text-white px-4 py-3 rounded-md hover:bg-emerald-700"
+              >
+                Fees
+              </button>
+              <button
+                onClick={() => navigate('/invoices')}
+                className="bg-violet-600 text-white px-4 py-3 rounded-md hover:bg-violet-700"
+              >
+                Invoices
+              </button>
+              <button
+                onClick={() => navigate('/payments')}
+                className="bg-fuchsia-600 text-white px-4 py-3 rounded-md hover:bg-fuchsia-700"
+              >
+                Payments
+              </button>
+              <button
+                onClick={() => navigate('/financial-reports')}
+                className="bg-slate-600 text-white px-4 py-3 rounded-md hover:bg-slate-700"
+              >
+                Reports
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
+        {/* Student/Parent - View Fees */}
+        {(user.role === 'student' || user.role === 'parent') && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+              <button
+                onClick={() => navigate('/fees')}
+                className="bg-emerald-600 text-white px-4 py-3 rounded-md hover:bg-emerald-700"
+              >
+                My Fees
+              </button>
+              <button
+                onClick={() => navigate('/invoices')}
+                className="bg-violet-600 text-white px-4 py-3 rounded-md hover:bg-violet-700"
+              >
+                My Invoices
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* All Roles - Communication */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold mb-4">Communication</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -219,12 +250,14 @@ function Dashboard() {
             >
               Compose
             </button>
-            <button
-              onClick={() => navigate('/announcements')}
-              className="bg-teal-600 text-white px-4 py-3 rounded-md hover:bg-teal-700"
-            >
-              Announcements
-            </button>
+            {(user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
+              <button
+                onClick={() => navigate('/announcements')}
+                className="bg-teal-600 text-white px-4 py-3 rounded-md hover:bg-teal-700"
+              >
+                Announcements
+              </button>
+            )}
             <button
               onClick={() => navigate('/notifications')}
               className="bg-cyan-600 text-white px-4 py-3 rounded-md hover:bg-cyan-700"
