@@ -275,40 +275,52 @@ export default function Fees() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Fee Management</h1>
-          <button
-            onClick={handleSeedData}
-            disabled={seeding}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {seeding ? 'Seeding...' : 'Seed Sample Data'}
-          </button>
-        </div>
-        {seedMessage && (
-          <div className="max-w-7xl mx-auto px-4 pb-4">
-            <div className={`p-3 rounded ${seedMessage.includes('success') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-              {seedMessage}
+      <nav className="bg-white shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center py-3 sm:py-0 sm:h-16 gap-3 sm:gap-0">
+            <div className="flex items-center w-full sm:w-auto">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="text-gray-700 hover:text-gray-900 text-sm sm:text-base"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+            <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+              <h1 className="text-lg sm:text-xl font-bold">Fee Management</h1>
+              <button
+                onClick={handleSeedData}
+                disabled={seeding}
+                className="px-3 py-2 sm:px-4 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              >
+                {seeding ? 'Seeding...' : 'Seed'}
+              </button>
             </div>
           </div>
-        )}
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex space-x-4 border-b">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 font-medium ${
-                  activeTab === tab.id
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+        </div>
+      </nav>
+      {seedMessage && (
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className={`p-3 rounded ${seedMessage.includes('success') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {seedMessage}
           </div>
+        </div>
+      )}
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex space-x-4 border-b overflow-x-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 font-medium whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'border-b-2 border-blue-500 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
       {renderContent()}

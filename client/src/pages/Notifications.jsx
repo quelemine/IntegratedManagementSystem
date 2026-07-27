@@ -82,19 +82,32 @@ export default function Notifications() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Notifications</h1>
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllAsRead}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Mark All as Read ({unreadCount})
-            </button>
-          )}
+      <nav className="bg-white shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center py-3 sm:py-0 sm:h-16 gap-3 sm:gap-0">
+            <div className="flex items-center w-full sm:w-auto">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="text-gray-700 hover:text-gray-900 text-sm sm:text-base"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+            <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+              <h1 className="text-lg sm:text-xl font-bold">Notifications</h1>
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllAsRead}
+                  className="px-3 py-2 sm:px-4 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm sm:text-base"
+                >
+                  <span className="hidden sm:inline">Mark All Read</span>
+                  <span className="sm:hidden">Read All</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="mb-4 flex space-x-2">

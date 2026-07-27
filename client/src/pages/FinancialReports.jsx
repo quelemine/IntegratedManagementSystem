@@ -316,24 +316,38 @@ export default function FinancialReports() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-3xl font-bold py-6">Financial Reports</h1>
-          <div className="flex space-x-4 border-b overflow-x-auto">
-            {tabs.map((tab) => (
+      <nav className="bg-white shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center py-3 sm:py-0 sm:h-16 gap-3 sm:gap-0">
+            <div className="flex items-center w-full sm:w-auto">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 font-medium whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
+                onClick={() => navigate('/dashboard')}
+                className="text-gray-700 hover:text-gray-900 text-sm sm:text-base"
               >
-                {tab.label}
+                ← Back to Dashboard
               </button>
-            ))}
+            </div>
+            <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+              <h1 className="text-lg sm:text-xl font-bold">Financial Reports</h1>
+            </div>
           </div>
+        </div>
+      </nav>
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex space-x-4 border-b overflow-x-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 font-medium whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'border-b-2 border-blue-500 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
       {renderContent()}

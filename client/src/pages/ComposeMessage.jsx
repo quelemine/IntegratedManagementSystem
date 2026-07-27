@@ -44,17 +44,23 @@ export default function ComposeMessage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Compose Message</h1>
-          <button
-            onClick={() => navigate('/inbox')}
-            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-          >
-            Back to Inbox
-          </button>
+      <nav className="bg-white shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center py-3 sm:py-0 sm:h-16 gap-3 sm:gap-0">
+            <div className="flex items-center w-full sm:w-auto">
+              <button
+                onClick={() => navigate('/inbox')}
+                className="text-gray-700 hover:text-gray-900 text-sm sm:text-base"
+              >
+                ← Back to Inbox
+              </button>
+            </div>
+            <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+              <h1 className="text-lg sm:text-xl font-bold">Compose Message</h1>
+            </div>
+          </div>
         </div>
-      </div>
+      </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="bg-white rounded-lg shadow p-6">

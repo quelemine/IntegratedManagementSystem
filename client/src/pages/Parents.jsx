@@ -122,18 +122,23 @@ function Parents() {
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="text-gray-700 hover:text-gray-900"
-            >
-              ← Back to Dashboard
-            </button>
-            <h1 className="text-xl font-bold">Parents</h1>
-            <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Parent
-            </Button>
+          <div className="flex flex-col sm:flex-row justify-between items-center py-3 sm:py-0 sm:h-16 gap-3 sm:gap-0">
+            <div className="flex items-center w-full sm:w-auto">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="text-gray-700 hover:text-gray-900 text-sm sm:text-base"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+            <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+              <h1 className="text-lg sm:text-xl font-bold">Parents</h1>
+              <Button onClick={handleCreate} className="text-sm sm:text-base">
+                <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Add Parent</span>
+                <span className="sm:hidden">Add</span>
+              </Button>
+            </div>
           </div>
         </div>
       </nav>

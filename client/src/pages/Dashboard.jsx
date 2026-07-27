@@ -35,15 +35,15 @@ function Dashboard() {
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold">{school.name}</h1>
+          <div className="flex flex-col sm:flex-row justify-between items-center py-3 sm:py-0 sm:h-16 gap-3 sm:gap-0">
+            <div className="flex items-center w-full sm:w-auto">
+              <h1 className="text-lg sm:text-xl font-bold text-center sm:text-left truncate w-full sm:w-auto">{school.name}</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-700">{user.first_name} {user.last_name}</span>
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4 w-full sm:w-auto">
+              <span className="text-gray-700 text-sm sm:text-base">{user.first_name} {user.last_name}</span>
               <button
                 onClick={() => navigate('/notifications')}
-                className="relative px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200"
+                className="relative px-3 py-2 sm:px-4 bg-gray-100 rounded-md hover:bg-gray-200 text-sm sm:text-base"
               >
                 Notifications
                 {unreadCount > 0 && (
@@ -54,7 +54,7 @@ function Dashboard() {
               </button>
               <button
                 onClick={logout}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                className="bg-red-600 text-white px-3 py-2 sm:px-4 rounded-md hover:bg-red-700 text-sm sm:text-base"
               >
                 Logout
               </button>
