@@ -26,6 +26,7 @@ import MessageView from './pages/MessageView'
 import ComposeMessage from './pages/ComposeMessage'
 import Announcements from './pages/Announcements'
 import Notifications from './pages/Notifications'
+import AuditLogs from './pages/AuditLogs'
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
             <Route path="/messages/compose" element={<><ComposeMessage /><HelpDesk /></>} />
             <Route path="/announcements" element={<><Announcements /><HelpDesk /></>} />
             <Route path="/notifications" element={<><Notifications /><HelpDesk /></>} />
+            <Route path="/audit-logs" element={<><AuditLogs /><HelpDesk /></>} />
           </Routes>
         </AuthProvider>
       </Router>

@@ -143,6 +143,12 @@ function Dashboard() {
               >
                 Users
               </button>
+              <button
+                onClick={() => navigate('/audit-logs')}
+                className="bg-gray-800 text-white px-4 py-3 rounded-md hover:bg-gray-900"
+              >
+                Audit Logs
+              </button>
             </div>
           </div>
         )}

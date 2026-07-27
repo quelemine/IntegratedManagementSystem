@@ -119,6 +119,7 @@ app.use('/api/reports', require('./routes/financialReports'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/audit', require('./routes/audit'));
 
 // 404 handler
 app.use(notFoundHandler);
