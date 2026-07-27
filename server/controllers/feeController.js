@@ -184,8 +184,11 @@ const seedFinancialData = async (req, res) => {
 const getFeeCategories = async (req, res) => {
   try {
     const schoolId = req.user.school_id;
+    console.log('[getFeeCategories] User school_id:', schoolId);
+    console.log('[getFeeCategories] User ID:', req.user.id);
 
     if (!schoolId) {
+      console.error('[getFeeCategories] Missing school_id for user:', req.user.id);
       return res.status(400).json({
         success: false,
         error: 'User school ID not found'
@@ -197,12 +200,13 @@ const getFeeCategories = async (req, res) => {
       .where('is_active', true)
       .orderBy('name');
 
+    console.log('[getFeeCategories] Found categories:', categories.length);
     res.json({
       success: true,
       data: categories
     });
   } catch (error) {
-    console.error('Error fetching fee categories:', error);
+    console.error('[getFeeCategories] Error:', error);
     if (error.message && error.message.includes('does not exist')) {
       return res.status(500).json({
         success: false,
@@ -253,8 +257,11 @@ const getTuitionStructures = async (req, res) => {
   try {
     const { grade_id, academic_year } = req.query;
     const schoolId = req.user.school_id;
+    console.log('[getTuitionStructures] User school_id:', schoolId);
+    console.log('[getTuitionStructures] Query params:', { grade_id, academic_year });
 
     if (!schoolId) {
+      console.error('[getTuitionStructures] Missing school_id for user:', req.user.id);
       return res.status(400).json({
         success: false,
         error: 'User school ID not found'
@@ -279,13 +286,14 @@ const getTuitionStructures = async (req, res) => {
     }
 
     const structures = await query.orderBy('tuition_structures.academic_year', 'desc');
+    console.log('[getTuitionStructures] Found structures:', structures.length);
 
     res.json({
       success: true,
       data: structures
     });
   } catch (error) {
-    console.error('Error fetching tuition structures:', error);
+    console.error('[getTuitionStructures] Error:', error);
     if (error.message && error.message.includes('does not exist')) {
       return res.status(500).json({
         success: false,
@@ -339,8 +347,11 @@ const getClassFees = async (req, res) => {
   try {
     const { class_id, academic_year } = req.query;
     const schoolId = req.user.school_id;
+    console.log('[getClassFees] User school_id:', schoolId);
+    console.log('[getClassFees] Query params:', { class_id, academic_year });
 
     if (!schoolId) {
+      console.error('[getClassFees] Missing school_id for user:', req.user.id);
       return res.status(400).json({
         success: false,
         error: 'User school ID not found'
@@ -367,13 +378,14 @@ const getClassFees = async (req, res) => {
     }
 
     const fees = await query.orderBy('class_fees.academic_year', 'desc');
+    console.log('[getClassFees] Found fees:', fees.length);
 
     res.json({
       success: true,
       data: fees
     });
   } catch (error) {
-    console.error('Error fetching class fees:', error);
+    console.error('[getClassFees] Error:', error);
     if (error.message && error.message.includes('does not exist')) {
       return res.status(500).json({
         success: false,
@@ -426,8 +438,10 @@ const createClassFee = async (req, res) => {
 const getDiscounts = async (req, res) => {
   try {
     const schoolId = req.user.school_id;
+    console.log('[getDiscounts] User school_id:', schoolId);
 
     if (!schoolId) {
+      console.error('[getDiscounts] Missing school_id for user:', req.user.id);
       return res.status(400).json({
         success: false,
         error: 'User school ID not found'
@@ -439,12 +453,13 @@ const getDiscounts = async (req, res) => {
       .where('is_active', true)
       .orderBy('name');
 
+    console.log('[getDiscounts] Found discounts:', discounts.length);
     res.json({
       success: true,
       data: discounts
     });
   } catch (error) {
-    console.error('Error fetching discounts:', error);
+    console.error('[getDiscounts] Error:', error);
     if (error.message && error.message.includes('does not exist')) {
       return res.status(500).json({
         success: false,
@@ -500,8 +515,11 @@ const getScholarships = async (req, res) => {
   try {
     const { academic_year } = req.query;
     const schoolId = req.user.school_id;
+    console.log('[getScholarships] User school_id:', schoolId);
+    console.log('[getScholarships] Query params:', { academic_year });
 
     if (!schoolId) {
+      console.error('[getScholarships] Missing school_id for user:', req.user.id);
       return res.status(400).json({
         success: false,
         error: 'User school ID not found'
@@ -517,13 +535,14 @@ const getScholarships = async (req, res) => {
     }
 
     const scholarships = await query.orderBy('name');
+    console.log('[getScholarships] Found scholarships:', scholarships.length);
 
     res.json({
       success: true,
       data: scholarships
     });
   } catch (error) {
-    console.error('Error fetching scholarships:', error);
+    console.error('[getScholarships] Error:', error);
     if (error.message && error.message.includes('does not exist')) {
       return res.status(500).json({
         success: false,
