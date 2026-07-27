@@ -40,11 +40,10 @@ function Assignments() {
     const fetchData = async () => {
       try {
         const [assignmentsRes, coursesRes] = await Promise.all([
-          axios.get('/api/assignments', { 
-            headers: { Authorization: `Bearer ${token}` },
+          axios.get('/assignments', { 
             params: { course_id: filterCourse || undefined }
           }),
-          axios.get('/api/courses', { headers: { Authorization: `Bearer ${token}` } })
+          axios.get('/courses')
         ])
         setAssignments(assignmentsRes.data.data)
         setCourses(coursesRes.data.data)
@@ -85,11 +84,8 @@ function Assignments() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this assignment?')) return
 
-    const token = localStorage.getItem('token')
     try {
-      await axios.delete(`/api/assignments/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.delete(`/assignments/${id}`)
       setAssignments(assignments.filter(a => a.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete assignment')
@@ -102,16 +98,11 @@ function Assignments() {
 
     try {
       if (editingAssignment) {
-        await axios.put(`/api/assignments/${editingAssignment.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.put(`/assignments/${editingAssignment.id}`, formData)
         setAssignments(assignments.map(a => a.id === editingAssignment.id ? { ...a, ...formData } : a))
       } else {
-        await axios.post('/api/assignments', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const response = await axios.get('/api/assignments', {
-          headers: { Authorization: `Bearer ${token}` },
+        await axios.post('/assignments', formData)
+        const response = await axios.get('/assignments', {
           params: { course_id: filterCourse || undefined }
         })
         setAssignments(response.data.data)

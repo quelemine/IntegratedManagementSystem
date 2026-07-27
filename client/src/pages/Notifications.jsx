@@ -18,10 +18,7 @@ export default function Notifications() {
     setLoading(true);
     try {
       const params = filter === 'unread' ? { is_read: 'false' } : {};
-      const response = await axios.get(`${API_URL}/notifications`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params
-      });
+      const response = await axios.get('/notifications', { params });
       setNotifications(response.data.data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -32,9 +29,7 @@ export default function Notifications() {
 
   const fetchUnreadCount = async () => {
     try {
-      const response = await axios.get(`${API_URL}/notifications/unread-count`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get('/notifications/unread-count');
       setUnreadCount(response.data.data.count);
     } catch (error) {
       console.error('Error fetching unread count:', error);
@@ -43,9 +38,7 @@ export default function Notifications() {
 
   const handleMarkAsRead = async (notificationId) => {
     try {
-      await axios.put(`${API_URL}/notifications/${notificationId}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put(`/notifications/${notificationId}/read`, {});
       fetchNotifications();
       fetchUnreadCount();
     } catch (error) {
@@ -55,9 +48,7 @@ export default function Notifications() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await axios.put(`${API_URL}/notifications/mark-all-read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put('/notifications/mark-all-read', {});
       fetchNotifications();
       fetchUnreadCount();
     } catch (error) {
@@ -69,9 +60,7 @@ export default function Notifications() {
     if (!window.confirm('Are you sure you want to delete this notification?')) return;
 
     try {
-      await axios.delete(`${API_URL}/notifications/${notificationId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`/notifications/${notificationId}`);
       fetchNotifications();
       fetchUnreadCount();
     } catch (error) {

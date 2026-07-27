@@ -52,8 +52,7 @@ function GradeReport() {
     const fetchData = async () => {
       try {
         const [gradesRes, studentsRes, coursesRes] = await Promise.all([
-          axios.get('/api/student-grades', { 
-            headers: { Authorization: `Bearer ${token}` },
+          axios.get('/student-grades', { 
             params: { 
               student_id: filterStudent || undefined,
               course_id: filterCourse || undefined,
@@ -61,8 +60,8 @@ function GradeReport() {
               academic_year: filterYear || undefined
             }
           }),
-          axios.get('/api/students', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/courses', { headers: { Authorization: `Bearer ${token}` } })
+          axios.get('/students'),
+          axios.get('/courses')
         ])
         setGrades(gradesRes.data.data)
         setStudents(studentsRes.data.data)
@@ -78,10 +77,8 @@ function GradeReport() {
   }, [navigate, filterStudent, filterCourse, filterTerm, filterYear])
 
   const fetchReport = async () => {
-    const token = localStorage.getItem('token')
     try {
-      const response = await axios.get('/api/student-grades/report', {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await axios.get('/student-grades/report', {
         params: {
           student_id: filterStudent || undefined,
           term: filterTerm || undefined,
@@ -133,11 +130,8 @@ function GradeReport() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this grade?')) return
 
-    const token = localStorage.getItem('token')
     try {
-      await axios.delete(`/api/student-grades/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.delete(`/student-grades/${id}`)
       setGrades(grades.filter(g => g.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete grade')
@@ -150,16 +144,11 @@ function GradeReport() {
 
     try {
       if (editingGrade) {
-        await axios.put(`/api/student-grades/${editingGrade.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.put(`/student-grades/${editingGrade.id}`, formData)
         setGrades(grades.map(g => g.id === editingGrade.id ? { ...g, ...formData } : g))
       } else {
-        await axios.post('/api/student-grades', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const response = await axios.get('/api/student-grades', {
-          headers: { Authorization: `Bearer ${token}` },
+        await axios.post('/student-grades', formData)
+        const response = await axios.get('/student-grades', {
           params: { 
             student_id: filterStudent || undefined,
             course_id: filterCourse || undefined,

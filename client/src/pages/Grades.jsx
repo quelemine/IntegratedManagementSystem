@@ -36,8 +36,8 @@ function Grades() {
     const fetchData = async () => {
       try {
         const [gradesRes, divisionsRes] = await Promise.all([
-          axios.get('/api/grades', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/divisions', { headers: { Authorization: `Bearer ${token}` } })
+          axios.get('/grades'),
+          axios.get('/divisions')
         ])
         setGrades(gradesRes.data.data)
         setDivisions(divisionsRes.data.data)
@@ -76,11 +76,8 @@ function Grades() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this grade?')) return
 
-    const token = localStorage.getItem('token')
     try {
-      await axios.delete(`/api/grades/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.delete(`/grades/${id}`)
       setGrades(grades.filter(g => g.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete grade')
@@ -93,17 +90,11 @@ function Grades() {
 
     try {
       if (editingGrade) {
-        await axios.put(`/api/grades/${editingGrade.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.put(`/grades/${editingGrade.id}`, formData)
         setGrades(grades.map(g => g.id === editingGrade.id ? { ...g, ...formData } : g))
       } else {
-        await axios.post('/api/grades', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const response = await axios.get('/api/grades', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.post('/grades', formData)
+        const response = await axios.get('/grades')
         setGrades(response.data.data)
       }
       setIsModalOpen(false)

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axios';
@@ -19,9 +19,7 @@ export default function ComposeMessage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${API_URL}/users`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get('/users');
       setUsers(response.data.data);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -33,9 +31,7 @@ export default function ComposeMessage() {
     setLoading(true);
 
     try {
-      await axios.post(`${API_URL}/messages`, formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post('/messages', formData);
       alert('Message sent successfully');
       navigate('/inbox');
     } catch (error) {

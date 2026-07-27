@@ -22,9 +22,7 @@ export default function Payments() {
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/payments`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get('/payments');
       setPayments(response.data.data);
     } catch (error) {
       console.error('Error fetching payments:', error);
@@ -36,9 +34,7 @@ export default function Payments() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/payments`, formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post('/payments', formData);
       setShowModal(false);
       setFormData({
         invoice_id: '',

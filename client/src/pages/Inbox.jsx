@@ -18,10 +18,7 @@ export default function Inbox() {
     setLoading(true);
     try {
       const params = filter === 'unread' ? { is_read: 'false' } : {};
-      const response = await axios.get(`${API_URL}/messages`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params
-      });
+      const response = await axios.get('/messages', { params });
       setMessages(response.data.data);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -32,9 +29,7 @@ export default function Inbox() {
 
   const handleMessageClick = async (messageId) => {
     try {
-      await axios.put(`${API_URL}/messages/${messageId}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put(`/messages/${messageId}/read`, {});
       navigate(`/messages/${messageId}`);
     } catch (error) {
       console.error('Error marking message as read:', error);
@@ -46,9 +41,7 @@ export default function Inbox() {
     if (!window.confirm('Are you sure you want to delete this message?')) return;
 
     try {
-      await axios.delete(`${API_URL}/messages/${messageId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`/messages/${messageId}`);
       fetchMessages();
     } catch (error) {
       console.error('Error deleting message:', error);

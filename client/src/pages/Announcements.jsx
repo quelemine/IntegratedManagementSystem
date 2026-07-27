@@ -22,9 +22,7 @@ export default function Announcements() {
   const fetchAnnouncements = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/announcements`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get('/announcements');
       setAnnouncements(response.data.data);
     } catch (error) {
       console.error('Error fetching announcements:', error);
@@ -36,9 +34,7 @@ export default function Announcements() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/announcements`, formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post('/announcements', formData);
       setShowModal(false);
       setFormData({ title: '', content: '', target_audience: { roles: ['all'] } });
       fetchAnnouncements();

@@ -18,9 +18,7 @@ export default function MessageView() {
   const fetchMessage = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/messages/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`/messages/${id}`);
       setMessage(response.data.data);
     } catch (error) {
       console.error('Error fetching message:', error);
@@ -34,11 +32,9 @@ export default function MessageView() {
     if (!replyText.trim()) return;
 
     try {
-      await axios.post(`${API_URL}/messages`, {
+      await axios.post('/messages', {
         receiver_id: message.sender_id,
         content: replyText
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setReplyText('');
       alert('Reply sent successfully');
@@ -52,9 +48,7 @@ export default function MessageView() {
     if (!window.confirm('Are you sure you want to delete this message?')) return;
 
     try {
-      await axios.delete(`${API_URL}/messages/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`/messages/${id}`);
       navigate('/inbox');
     } catch (error) {
       console.error('Error deleting message:', error);

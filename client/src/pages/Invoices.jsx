@@ -15,9 +15,7 @@ export default function Invoices() {
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/invoices`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get('/invoices');
       setInvoices(response.data.data);
     } catch (error) {
       console.error('Error fetching invoices:', error);
@@ -28,9 +26,7 @@ export default function Invoices() {
 
   const fetchInvoiceDetails = async (id) => {
     try {
-      const response = await axios.get(`${API_URL}/invoices/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`/invoices/${id}`);
       setSelectedInvoice(response.data.data);
     } catch (error) {
       console.error('Error fetching invoice details:', error);

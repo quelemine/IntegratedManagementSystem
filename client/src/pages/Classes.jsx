@@ -38,9 +38,9 @@ function Classes() {
     const fetchData = async () => {
       try {
         const [classesRes, gradesRes, teachersRes] = await Promise.all([
-          axios.get('/api/classes', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/grades', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/teachers', { headers: { Authorization: `Bearer ${token}` } })
+          axios.get('/classes'),
+          axios.get('/grades'),
+          axios.get('/teachers')
         ])
         setClasses(classesRes.data.data)
         setGrades(gradesRes.data.data)
@@ -82,11 +82,8 @@ function Classes() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this class?')) return
 
-    const token = localStorage.getItem('token')
     try {
-      await axios.delete(`/api/classes/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.delete(`/classes/${id}`)
       setClasses(classes.filter(c => c.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete class')
@@ -99,17 +96,11 @@ function Classes() {
 
     try {
       if (editingClass) {
-        await axios.put(`/api/classes/${editingClass.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.put(`/classes/${editingClass.id}`, formData)
         setClasses(classes.map(c => c.id === editingClass.id ? { ...c, ...formData } : c))
       } else {
-        await axios.post('/api/classes', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const response = await axios.get('/api/classes', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.post('/classes', formData)
+        const response = await axios.get('/classes')
         setClasses(response.data.data)
       }
       setIsModalOpen(false)

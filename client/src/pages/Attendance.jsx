@@ -42,12 +42,11 @@ function Attendance() {
     const fetchData = async () => {
       try {
         const [attendanceRes, studentsRes, classesRes] = await Promise.all([
-          axios.get('/api/attendance', { 
-            headers: { Authorization: `Bearer ${token}` },
+          axios.get('/attendance', { 
             params: { class_id: filterClass || undefined, date: filterDate || undefined }
           }),
-          axios.get('/api/students', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/classes', { headers: { Authorization: `Bearer ${token}` } })
+          axios.get('/students'),
+          axios.get('/classes')
         ])
         setAttendance(attendanceRes.data.data)
         setStudents(studentsRes.data.data)
@@ -89,11 +88,8 @@ function Attendance() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this attendance record?')) return
 
-    const token = localStorage.getItem('token')
     try {
-      await axios.delete(`/api/attendance/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.delete(`/attendance/${id}`)
       setAttendance(attendance.filter(a => a.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete attendance')
@@ -106,16 +102,11 @@ function Attendance() {
 
     try {
       if (editingAttendance) {
-        await axios.put(`/api/attendance/${editingAttendance.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.put(`/attendance/${editingAttendance.id}`, formData)
         setAttendance(attendance.map(a => a.id === editingAttendance.id ? { ...a, ...formData } : a))
       } else {
-        await axios.post('/api/attendance', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const response = await axios.get('/api/attendance', {
-          headers: { Authorization: `Bearer ${token}` },
+        await axios.post('/attendance', formData)
+        const response = await axios.get('/attendance', {
           params: { class_id: filterClass || undefined, date: filterDate || undefined }
         })
         setAttendance(response.data.data)

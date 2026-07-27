@@ -33,9 +33,7 @@ function Divisions() {
 
     const fetchData = async () => {
       try {
-        const response = await axios.get('/api/divisions', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const response = await axios.get('/divisions')
         setDivisions(response.data.data)
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to fetch divisions')
@@ -70,11 +68,8 @@ function Divisions() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this division?')) return
 
-    const token = localStorage.getItem('token')
     try {
-      await axios.delete(`/api/divisions/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.delete(`/divisions/${id}`)
       setDivisions(divisions.filter(d => d.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete division')
@@ -87,17 +82,11 @@ function Divisions() {
 
     try {
       if (editingDivision) {
-        await axios.put(`/api/divisions/${editingDivision.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.put(`/divisions/${editingDivision.id}`, formData)
         setDivisions(divisions.map(d => d.id === editingDivision.id ? { ...d, ...formData } : d))
       } else {
-        await axios.post('/api/divisions', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const response = await axios.get('/api/divisions', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.post('/divisions', formData)
+        const response = await axios.get('/divisions')
         setDivisions(response.data.data)
       }
       setIsModalOpen(false)

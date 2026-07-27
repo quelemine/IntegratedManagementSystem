@@ -48,9 +48,7 @@ export default function FinancialReports() {
           endpoint = '/reports/financial-summary';
       }
 
-      const response = await axios.get(`${API_URL}${endpoint}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(endpoint);
       setData(response.data.data);
     } catch (error) {
       console.error('Error fetching data:', error);
