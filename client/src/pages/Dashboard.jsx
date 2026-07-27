@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react'
 import axios from '../utils/axios'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { Users, DollarSign, TrendingUp, BookOpen, CheckCircle, Clock } from 'lucide-react'
 
 function Dashboard() {
   const [school, setSchool] = useState(null)
+  const [analytics, setAnalytics] = useState(null)
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false)
   const { user, logout, unreadCount } = useAuth()
   const navigate = useNavigate()
 
@@ -24,7 +27,34 @@ function Dashboard() {
       }
     }
 
+    // Fetch analytics based on role
+    const fetchAnalytics = async () => {
+      setLoadingAnalytics(true)
+      try {
+        let endpoint = ''
+        if (user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') {
+          endpoint = '/dashboard/admin'
+        } else if (user.role === 'teacher') {
+          endpoint = '/dashboard/teacher'
+        } else if (user.role === 'student') {
+          endpoint = '/dashboard/student'
+        } else if (user.role === 'parent') {
+          endpoint = '/dashboard/parent'
+        }
+
+        if (endpoint) {
+          const response = await axios.get(endpoint)
+          setAnalytics(response.data.data)
+        }
+      } catch (err) {
+        console.error('Failed to fetch analytics:', err)
+      } finally {
+        setLoadingAnalytics(false)
+      }
+    }
+
     fetchSchool()
+    fetchAnalytics()
   }, [user, navigate])
 
   if (!user || !school) {
@@ -89,6 +119,165 @@ function Dashboard() {
             </button>
           </div>
         </div>
+
+        {/* Analytics Cards */}
+        {!loadingAnalytics && analytics && (
+          <div className="mb-8">
+            {/* Admin Analytics */}
+            {(user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="bg-blue-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Total Students</p>
+                      <p className="text-2xl font-bold">{analytics.totalStudents}</p>
+                    </div>
+                    <Users className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+                <div className="bg-green-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Total Teachers</p>
+                      <p className="text-2xl font-bold">{analytics.totalTeachers}</p>
+                    </div>
+                    <BookOpen className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+                <div className="bg-purple-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Total Parents</p>
+                      <p className="text-2xl font-bold">{analytics.totalParents}</p>
+                    </div>
+                    <Users className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+                <div className="bg-emerald-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Total Revenue</p>
+                      <p className="text-2xl font-bold">${analytics.totalRevenue.toLocaleString()}</p>
+                    </div>
+                    <DollarSign className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+                <div className="bg-red-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Outstanding</p>
+                      <p className="text-2xl font-bold">${analytics.outstandingBalances.toLocaleString()}</p>
+                    </div>
+                    <DollarSign className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+                <div className="bg-cyan-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Attendance Rate</p>
+                      <p className="text-2xl font-bold">{analytics.attendanceStats.attendanceRate}%</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Teacher Analytics */}
+            {user.role === 'teacher' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-blue-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Assigned Classes</p>
+                      <p className="text-2xl font-bold">{analytics.assignedClasses}</p>
+                    </div>
+                    <BookOpen className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+                <div className="bg-green-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Total Students</p>
+                      <p className="text-2xl font-bold">{analytics.totalStudents}</p>
+                    </div>
+                    <Users className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+                <div className="bg-orange-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Pending Grading</p>
+                      <p className="text-2xl font-bold">{analytics.pendingGrading}</p>
+                    </div>
+                    <Clock className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Student Analytics */}
+            {user.role === 'student' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-blue-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Average Grade</p>
+                      <p className="text-2xl font-bold">{analytics.academicProgress.averageGrade}%</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+                <div className="bg-green-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Attendance</p>
+                      <p className="text-2xl font-bold">{analytics.attendance.percentage}%</p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+                <div className="bg-red-500 text-white p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm opacity-80">Fee Balance</p>
+                      <p className="text-2xl font-bold">${analytics.feeBalance.outstanding.toLocaleString()}</p>
+                    </div>
+                    <DollarSign className="h-8 w-8 opacity-80" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Parent Analytics */}
+            {user.role === 'parent' && (
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Children's Overview</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {analytics.children.map((child) => (
+                    <div key={child.id} className="bg-gray-50 p-4 rounded-lg border">
+                      <h4 className="font-semibold text-gray-900 mb-2">{child.name}</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Average Grade:</span>
+                          <span className="font-medium">{child.averageGrade}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Attendance:</span>
+                          <span className="font-medium">{child.attendancePercentage}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Outstanding:</span>
+                          <span className="font-medium text-red-600">${child.outstandingBalance.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Admin/Principal Only - User & School Management */}
         {(user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
