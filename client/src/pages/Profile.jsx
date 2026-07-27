@@ -31,6 +31,11 @@ function Profile() {
     new_password: '',
     confirm_password: ''
   })
+  
+  const [verificationStep, setVerificationStep] = useState('email') // 'email' | 'code' | 'password'
+  const [verificationCode, setVerificationCode] = useState('')
+  const [userEnteredCode, setUserEnteredCode] = useState('')
+  const [codeSent, setCodeSent] = useState(false)
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault()
@@ -72,9 +77,52 @@ function Profile() {
       setSuccess('Password changed successfully')
       setIsPasswordModalOpen(false)
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' })
+      setVerificationStep('email')
+      setCodeSent(false)
+      setUserEnteredCode('')
+      setVerificationCode('')
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to change password')
     }
+  }
+
+  const handleSendVerificationCode = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await axios.post('/auth/send-verification-code', {
+        email: user.email
+      })
+      
+      setVerificationCode(response.data.code)
+      setCodeSent(true)
+      setVerificationStep('code')
+      setSuccess('Verification code sent to your email')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to send verification code')
+    }
+  }
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault()
+    setError('')
+
+    if (userEnteredCode !== verificationCode) {
+      setError('Invalid verification code')
+      return
+    }
+
+    setVerificationStep('password')
+    setUserEnteredCode('')
+  }
+
+  const handleResetPasswordFlow = () => {
+    setVerificationStep('email')
+    setCodeSent(false)
+    setUserEnteredCode('')
+    setVerificationCode('')
   }
 
   if (!user) {
@@ -225,50 +273,100 @@ function Profile() {
 
       <Modal
         isOpen={isPasswordModalOpen}
-        onClose={() => setIsPasswordModalOpen(false)}
+        onClose={() => {
+          setIsPasswordModalOpen(false)
+          handleResetPasswordFlow()
+        }}
         title="Change Password"
         size="lg"
       >
-        <form onSubmit={handlePasswordChange} className="space-y-4">
-          <div>
-            <Label htmlFor="current_password">Current Password</Label>
-            <Input
-              id="current_password"
-              type="password"
-              value={passwordData.current_password}
-              onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="new_password">New Password</Label>
-            <Input
-              id="new_password"
-              type="password"
-              value={passwordData.new_password}
-              onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-              required
-              minLength={8}
-            />
-          </div>
-          <div>
-            <Label htmlFor="confirm_password">Confirm New Password</Label>
-            <Input
-              id="confirm_password"
-              type="password"
-              value={passwordData.confirm_password}
-              onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-              required
-              minLength={8}
-            />
-          </div>
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setIsPasswordModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit">Change Password</Button>
-          </div>
-        </form>
+        {verificationStep === 'email' && (
+          <form onSubmit={handleSendVerificationCode} className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-4">
+                We'll send a verification code to your email address: <strong>{user.email}</strong>
+              </p>
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => {
+                setIsPasswordModalOpen(false)
+                handleResetPasswordFlow()
+              }}>
+                Cancel
+              </Button>
+              <Button type="submit">Send Verification Code</Button>
+            </div>
+          </form>
+        )}
+
+        {verificationStep === 'code' && (
+          <form onSubmit={handleVerifyCode} className="space-y-4">
+            <div>
+              <Label htmlFor="verification_code">Verification Code</Label>
+              <Input
+                id="verification_code"
+                type="text"
+                value={userEnteredCode}
+                onChange={(e) => setUserEnteredCode(e.target.value)}
+                placeholder="Enter the 6-digit code"
+                required
+                maxLength={6}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Check your email for the verification code
+              </p>
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={handleResetPasswordFlow}>
+                Back
+              </Button>
+              <Button type="submit">Verify Code</Button>
+            </div>
+          </form>
+        )}
+
+        {verificationStep === 'password' && (
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div>
+              <Label htmlFor="current_password">Current Password</Label>
+              <Input
+                id="current_password"
+                type="password"
+                value={passwordData.current_password}
+                onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="new_password">New Password</Label>
+              <Input
+                id="new_password"
+                type="password"
+                value={passwordData.new_password}
+                onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
+                required
+                minLength={8}
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirm_password">Confirm New Password</Label>
+              <Input
+                id="confirm_password"
+                type="password"
+                value={passwordData.confirm_password}
+                onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
+                required
+                minLength={8}
+              />
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={handleResetPasswordFlow}>
+                Back
+              </Button>
+              <Button type="submit">Change Password</Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   )
