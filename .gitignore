@@ -35,5 +35,8 @@ Thumbs.db
 # Backups
 backups/
 
+# Test credentials (security)
+TEST_CREDENTIALS.md
+
 # Knex
 # knexfile.js - needed for cloud deployment
