@@ -7,6 +7,8 @@ export default function Fees() {
   const [activeTab, setActiveTab] = useState('categories');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMessage, setSeedMessage] = useState('');
 
   const tabs = [
     { id: 'categories', label: 'Fee Categories' },
@@ -50,6 +52,20 @@ export default function Fees() {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSeedData = async () => {
+    setSeeding(true);
+    setSeedMessage('');
+    try {
+      const response = await axios.post('/fees/seed');
+      setSeedMessage(response.data.message || 'Data seeded successfully');
+      fetchData();
+    } catch (error) {
+      setSeedMessage(error.response?.data?.error || 'Failed to seed data');
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -229,8 +245,24 @@ export default function Fees() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Fee Management</h1>
+          <button
+            onClick={handleSeedData}
+            disabled={seeding}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {seeding ? 'Seeding...' : 'Seed Sample Data'}
+          </button>
+        </div>
+        {seedMessage && (
+          <div className="max-w-7xl mx-auto px-4 pb-4">
+            <div className={`p-3 rounded ${seedMessage.includes('success') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              {seedMessage}
+            </div>
+          </div>
+        )}
         <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-3xl font-bold py-6">Fee Management</h1>
           <div className="flex space-x-4 border-b">
             {tabs.map((tab) => (
               <button

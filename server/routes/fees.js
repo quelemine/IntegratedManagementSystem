@@ -5,6 +5,20 @@ const { authenticate } = require('../middleware/auth');
 
 /**
  * @swagger
+ * /api/fees/seed:
+ *   post:
+ *     summary: Seed financial data
+ *     tags: [Fees]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Financial data seeded successfully
+ */
+router.post('/seed', authenticate, feeController.seedFinancialData);
+
+/**
+ * @swagger
  * /api/fees/categories:
  *   get:
  *     summary: Get all fee categories
