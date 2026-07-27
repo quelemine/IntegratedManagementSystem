@@ -185,6 +185,13 @@ const getFeeCategories = async (req, res) => {
   try {
     const schoolId = req.user.school_id;
 
+    if (!schoolId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User school ID not found'
+      });
+    }
+
     const categories = await db('fee_categories')
       .where('school_id', schoolId)
       .where('is_active', true)
@@ -196,6 +203,12 @@ const getFeeCategories = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching fee categories:', error);
+    if (error.message && error.message.includes('does not exist')) {
+      return res.status(500).json({
+        success: false,
+        error: 'Fee categories table not found. Please run database migrations.'
+      });
+    }
     res.status(500).json({
       success: false,
       error: 'Failed to fetch fee categories'
@@ -241,6 +254,13 @@ const getTuitionStructures = async (req, res) => {
     const { grade_id, academic_year } = req.query;
     const schoolId = req.user.school_id;
 
+    if (!schoolId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User school ID not found'
+      });
+    }
+
     let query = db('tuition_structures')
       .select(
         'tuition_structures.*',
@@ -266,6 +286,12 @@ const getTuitionStructures = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching tuition structures:', error);
+    if (error.message && error.message.includes('does not exist')) {
+      return res.status(500).json({
+        success: false,
+        error: 'Tuition structures table not found. Please run database migrations.'
+      });
+    }
     res.status(500).json({
       success: false,
       error: 'Failed to fetch tuition structures'
@@ -314,6 +340,13 @@ const getClassFees = async (req, res) => {
     const { class_id, academic_year } = req.query;
     const schoolId = req.user.school_id;
 
+    if (!schoolId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User school ID not found'
+      });
+    }
+
     let query = db('class_fees')
       .select(
         'class_fees.*',
@@ -341,6 +374,12 @@ const getClassFees = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching class fees:', error);
+    if (error.message && error.message.includes('does not exist')) {
+      return res.status(500).json({
+        success: false,
+        error: 'Class fees table not found. Please run database migrations.'
+      });
+    }
     res.status(500).json({
       success: false,
       error: 'Failed to fetch class fees'
@@ -388,6 +427,13 @@ const getDiscounts = async (req, res) => {
   try {
     const schoolId = req.user.school_id;
 
+    if (!schoolId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User school ID not found'
+      });
+    }
+
     const discounts = await db('discounts')
       .where('school_id', schoolId)
       .where('is_active', true)
@@ -399,6 +445,12 @@ const getDiscounts = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching discounts:', error);
+    if (error.message && error.message.includes('does not exist')) {
+      return res.status(500).json({
+        success: false,
+        error: 'Discounts table not found. Please run database migrations.'
+      });
+    }
     res.status(500).json({
       success: false,
       error: 'Failed to fetch discounts'
@@ -449,6 +501,13 @@ const getScholarships = async (req, res) => {
     const { academic_year } = req.query;
     const schoolId = req.user.school_id;
 
+    if (!schoolId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User school ID not found'
+      });
+    }
+
     let query = db('scholarships')
       .where('school_id', schoolId)
       .where('is_active', true);
@@ -465,6 +524,12 @@ const getScholarships = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching scholarships:', error);
+    if (error.message && error.message.includes('does not exist')) {
+      return res.status(500).json({
+        success: false,
+        error: 'Scholarships table not found. Please run database migrations.'
+      });
+    }
     res.status(500).json({
       success: false,
       error: 'Failed to fetch scholarships'
