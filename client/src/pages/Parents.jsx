@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import axios from '../utils/axios'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,8 +38,8 @@ function Parents() {
     const fetchData = async () => {
       try {
         const [parentsRes, usersRes] = await Promise.all([
-          axios.get('/api/parents', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/users?role=parent', { headers: { Authorization: `Bearer ${token}` } })
+          axios.get('/parents'),
+          axios.get('/users?role=parent')
         ])
         setParents(parentsRes.data.data)
         setUsers(usersRes.data.data)
@@ -82,11 +82,8 @@ function Parents() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this parent?')) return
 
-    const token = localStorage.getItem('token')
     try {
-      await axios.delete(`/api/parents/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.delete(`/parents/${id}`)
       setParents(parents.filter(p => p.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete parent')
@@ -95,21 +92,14 @@ function Parents() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const token = localStorage.getItem('token')
 
     try {
       if (editingParent) {
-        await axios.put(`/api/parents/${editingParent.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.put(`/parents/${editingParent.id}`, formData)
         setParents(parents.map(p => p.id === editingParent.id ? { ...p, ...formData } : p))
       } else {
-        await axios.post('/api/parents', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const response = await axios.get('/api/parents', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.post('/parents', formData)
+        const response = await axios.get('/parents')
         setParents(response.data.data)
       }
       setIsModalOpen(false)

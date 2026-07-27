@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import axios from '../utils/axios'
 import { useNavigate } from 'react-router-dom'
 
 function Users() {
@@ -17,9 +17,7 @@ function Users() {
 
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('/api/users', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const response = await axios.get('/users')
         setUsers(response.data.data)
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to fetch users')

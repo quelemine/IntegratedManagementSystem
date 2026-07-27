@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import axios from '../utils/axios'
 import { useNavigate } from 'react-router-dom'
 
 function Schools() {
@@ -17,9 +17,7 @@ function Schools() {
 
     const fetchSchool = async () => {
       try {
-        const response = await axios.get('/api/schools/my-school', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const response = await axios.get('/schools/my-school')
         setSchool(response.data.data)
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to fetch school')

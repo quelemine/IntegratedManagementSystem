@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import axios from '../utils/axios'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -45,11 +45,10 @@ function Quizzes() {
     const fetchData = async () => {
       try {
         const [quizzesRes, coursesRes] = await Promise.all([
-          axios.get('/api/quizzes', { 
-            headers: { Authorization: `Bearer ${token}` },
+          axios.get('/quizzes', { 
             params: { course_id: filterCourse || undefined }
           }),
-          axios.get('/api/courses', { headers: { Authorization: `Bearer ${token}` } })
+          axios.get('/courses')
         ])
         setQuizzes(quizzesRes.data.data)
         setCourses(coursesRes.data.data)
@@ -100,11 +99,8 @@ function Quizzes() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this quiz?')) return
 
-    const token = localStorage.getItem('token')
     try {
-      await axios.delete(`/api/quizzes/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.delete(`/quizzes/${id}`)
       setQuizzes(quizzes.filter(q => q.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete quiz')
@@ -113,20 +109,14 @@ function Quizzes() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const token = localStorage.getItem('token')
 
     try {
       if (editingQuiz) {
-        await axios.put(`/api/quizzes/${editingQuiz.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.put(`/quizzes/${editingQuiz.id}`, formData)
         setQuizzes(quizzes.map(q => q.id === editingQuiz.id ? { ...q, ...formData } : q))
       } else {
-        await axios.post('/api/quizzes', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const response = await axios.get('/api/quizzes', {
-          headers: { Authorization: `Bearer ${token}` },
+        await axios.post('/quizzes', formData)
+        const response = await axios.get('/quizzes', {
           params: { course_id: filterCourse || undefined }
         })
         setQuizzes(response.data.data)

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import axios from 'axios'
+import axios from '../utils/axios'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -38,10 +38,7 @@ function Profile() {
     setSuccess('')
 
     try {
-      const token = localStorage.getItem('token')
-      const response = await axios.put('/api/auth/profile', profileData, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const response = await axios.put('/auth/profile', profileData)
       
       updateUser(response.data.data)
       setSuccess('Profile updated successfully')
@@ -67,12 +64,9 @@ function Profile() {
     }
 
     try {
-      const token = localStorage.getItem('token')
-      await axios.post('/api/auth/change-password', {
+      await axios.post('/auth/change-password', {
         current_password: passwordData.current_password,
         new_password: passwordData.new_password
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       })
       
       setSuccess('Password changed successfully')

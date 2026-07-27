@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import axios from '../utils/axios'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,8 +41,8 @@ function Teachers() {
     const fetchData = async () => {
       try {
         const [teachersRes, usersRes] = await Promise.all([
-          axios.get('/api/teachers', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/users?role=teacher', { headers: { Authorization: `Bearer ${token}` } })
+          axios.get('/teachers'),
+          axios.get('/users?role=teacher')
         ])
         setTeachers(teachersRes.data.data)
         setUsers(usersRes.data.data)
@@ -91,11 +91,8 @@ function Teachers() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this teacher?')) return
 
-    const token = localStorage.getItem('token')
     try {
-      await axios.delete(`/api/teachers/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.delete(`/teachers/${id}`)
       setTeachers(teachers.filter(t => t.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete teacher')
@@ -104,21 +101,14 @@ function Teachers() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const token = localStorage.getItem('token')
 
     try {
       if (editingTeacher) {
-        await axios.put(`/api/teachers/${editingTeacher.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.put(`/teachers/${editingTeacher.id}`, formData)
         setTeachers(teachers.map(t => t.id === editingTeacher.id ? { ...t, ...formData } : t))
       } else {
-        await axios.post('/api/teachers', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const response = await axios.get('/api/teachers', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.post('/teachers', formData)
+        const response = await axios.get('/teachers')
         setTeachers(response.data.data)
       }
       setIsModalOpen(false)

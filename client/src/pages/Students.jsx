@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import axios from '../utils/axios'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,10 +45,10 @@ function Students() {
     const fetchData = async () => {
       try {
         const [studentsRes, classesRes, gradesRes, divisionsRes] = await Promise.all([
-          axios.get('/api/students', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/classes', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/grades', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/divisions', { headers: { Authorization: `Bearer ${token}` } })
+          axios.get('/students'),
+          axios.get('/classes'),
+          axios.get('/grades'),
+          axios.get('/divisions')
         ])
         setStudents(studentsRes.data.data)
         setClasses(classesRes.data.data)
@@ -103,11 +103,8 @@ function Students() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this student?')) return
 
-    const token = localStorage.getItem('token')
     try {
-      await axios.delete(`/api/students/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.delete(`/students/${id}`)
       setStudents(students.filter(s => s.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete student')
@@ -116,21 +113,14 @@ function Students() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const token = localStorage.getItem('token')
 
     try {
       if (editingStudent) {
-        await axios.put(`/api/students/${editingStudent.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.put(`/students/${editingStudent.id}`, formData)
         setStudents(students.map(s => s.id === editingStudent.id ? { ...s, ...formData } : s))
       } else {
-        await axios.post('/api/students', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const response = await axios.get('/api/students', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.post('/students', formData)
+        const response = await axios.get('/students')
         setStudents(response.data.data)
       }
       setIsModalOpen(false)
