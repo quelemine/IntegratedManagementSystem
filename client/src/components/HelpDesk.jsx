@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import axios from '../utils/axios'
-import { MessageCircle, X, Send } from 'lucide-react'
+import { MessageCircle, X, Send, CheckCircle, AlertCircle } from 'lucide-react'
 
 export default function HelpDesk() {
   const [isOpen, setIsOpen] = useState(false)
@@ -9,6 +9,7 @@ export default function HelpDesk() {
     { sender: 'system', text: 'Welcome to Help Desk! How can we assist you today?' }
   ])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
@@ -16,17 +17,33 @@ export default function HelpDesk() {
 
     const userMessage = message
     setMessage('')
+    setError(null)
     setChatHistory([...chatHistory, { sender: 'user', text: userMessage }])
     setLoading(true)
 
-    // Simulate response without backend call
-    setTimeout(() => {
+    try {
+      const response = await axios.post('/messages/helpdesk', {
+        content: userMessage
+      })
+
+      if (response.data.success) {
+        setChatHistory(prev => [
+          ...prev,
+          { sender: 'system', text: response.data.message || 'Thank you for your message. Our support team has been notified and will respond shortly.' }
+        ])
+      } else {
+        throw new Error(response.data.error || 'Failed to send message')
+      }
+    } catch (err) {
+      console.error('HelpDesk error:', err)
+      setError(err.response?.data?.error || err.message || 'Failed to send message. Please try again.')
       setChatHistory(prev => [
         ...prev,
-        { sender: 'system', text: 'Thank you for your message. Our support team has been notified and will respond shortly.' }
+        { sender: 'system', text: 'Sorry, we couldn\'t send your message. Please try again.' }
       ])
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -61,6 +78,17 @@ export default function HelpDesk() {
 
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {error && (
+              <div className="flex justify-start">
+                <div className="bg-red-50 text-red-800 p-3 rounded-lg flex items-start gap-2 max-w-[80%]">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Error</p>
+                    <p className="text-sm">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
             {chatHistory.map((msg, index) => (
               <div
                 key={index}

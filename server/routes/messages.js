@@ -4,6 +4,7 @@ const {
   getMessages,
   getMessageById,
   createMessage,
+  createHelpDeskMessage,
   markAsRead,
   deleteMessage
 } = require('../controllers/messageController');
@@ -18,8 +19,11 @@ router.get('/', getMessages);
 // GET /api/messages/:id - Get a specific message
 router.get('/:id', getMessageById);
 
-// POST /api/messages - Create a new message
+// POST /api/messages - Create a new message (direct user-to-user)
 router.post('/', createMessage);
+
+// POST /api/messages/helpdesk - Create a HelpDesk message (auto-routes to admin)
+router.post('/helpdesk', createHelpDeskMessage);
 
 // PUT /api/messages/:id/read - Mark message as read
 router.put('/:id/read', markAsRead);
