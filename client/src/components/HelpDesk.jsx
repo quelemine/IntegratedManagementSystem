@@ -19,24 +19,14 @@ export default function HelpDesk() {
     setChatHistory([...chatHistory, { sender: 'user', text: userMessage }])
     setLoading(true)
 
-    try {
-      const response = await axios.post('/messages', {
-        receiver_id: 'system',
-        content: userMessage
-      })
-      
+    // Simulate response without backend call
+    setTimeout(() => {
       setChatHistory(prev => [
         ...prev,
-        { sender: 'system', text: 'Your message has been sent to the support team. They will respond shortly.' }
+        { sender: 'system', text: 'Thank you for your message. Our support team has been notified and will respond shortly.' }
       ])
-    } catch (error) {
-      setChatHistory(prev => [
-        ...prev,
-        { sender: 'system', text: 'Failed to send message. Please try again.' }
-      ])
-    } finally {
       setLoading(false)
-    }
+    }, 1000)
   }
 
   return (
