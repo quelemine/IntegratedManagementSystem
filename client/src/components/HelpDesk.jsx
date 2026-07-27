@@ -1,15 +1,15 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from '../utils/axios'
-import { MessageCircle, X, Send, CheckCircle, AlertCircle } from 'lucide-react'
+import { MessageCircle, X, Send, AlertCircle, Inbox } from 'lucide-react'
 
 export default function HelpDesk() {
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
-  const [chatHistory, setChatHistory] = useState([
-    { sender: 'system', text: 'Welcome to Help Desk! How can we assist you today?' }
-  ])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(false)
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
@@ -18,7 +18,7 @@ export default function HelpDesk() {
     const userMessage = message
     setMessage('')
     setError(null)
-    setChatHistory([...chatHistory, { sender: 'user', text: userMessage }])
+    setSuccess(false)
     setLoading(true)
 
     try {
@@ -27,23 +27,25 @@ export default function HelpDesk() {
       })
 
       if (response.data.success) {
-        setChatHistory(prev => [
-          ...prev,
-          { sender: 'system', text: response.data.message || 'Thank you for your message. Our support team has been notified and will respond shortly.' }
-        ])
+        setSuccess(true)
+        setTimeout(() => {
+          setSuccess(false)
+          setIsOpen(false)
+        }, 2000)
       } else {
         throw new Error(response.data.error || 'Failed to send message')
       }
     } catch (err) {
       console.error('HelpDesk error:', err)
       setError(err.response?.data?.error || err.message || 'Failed to send message. Please try again.')
-      setChatHistory(prev => [
-        ...prev,
-        { sender: 'system', text: 'Sorry, we couldn\'t send your message. Please try again.' }
-      ])
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleViewInbox = () => {
+    navigate('/inbox')
+    setIsOpen(false)
   }
 
   return (
@@ -78,6 +80,16 @@ export default function HelpDesk() {
 
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {success && (
+              <div className="flex justify-start">
+                <div className="bg-green-50 text-green-800 p-3 rounded-lg flex items-start gap-2 max-w-[80%]">
+                  <div>
+                    <p className="font-medium">Message Sent</p>
+                    <p className="text-sm">Your message has been sent. An administrator will respond shortly.</p>
+                  </div>
+                </div>
+              </div>
+            )}
             {error && (
               <div className="flex justify-start">
                 <div className="bg-red-50 text-red-800 p-3 rounded-lg flex items-start gap-2 max-w-[80%]">
@@ -89,22 +101,17 @@ export default function HelpDesk() {
                 </div>
               </div>
             )}
-            {chatHistory.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            <div className="text-center text-gray-600 text-sm">
+              <p>Send a message to the administration team.</p>
+              <p className="mt-2">Check your Inbox for replies.</p>
+              <button
+                onClick={handleViewInbox}
+                className="mt-3 text-blue-600 hover:text-blue-800 underline"
               >
-                <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
-                    msg.sender === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              </div>
-            ))}
+                <Inbox className="h-4 w-4 inline mr-1" />
+                View Messages in Inbox
+              </button>
+            </div>
             {loading && (
               <div className="flex justify-start">
                 <div className="bg-gray-100 text-gray-800 p-3 rounded-lg">

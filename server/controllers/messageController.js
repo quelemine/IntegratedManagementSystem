@@ -228,8 +228,10 @@ const createHelpDeskMessage = async (req, res) => {
     const schoolId = req.user.school_id;
     const sender_name = `${req.user.first_name} ${req.user.last_name}`;
 
-    console.log('[HelpDesk] Creating message - sender_id:', sender_id);
+    console.log('[HelpDesk] ===== CREATE HELPDESK MESSAGE START =====');
+    console.log('[HelpDesk] sender_id:', sender_id);
     console.log('[HelpDesk] sender_name:', sender_name);
+    console.log('[HelpDesk] sender_email:', req.user.email);
     console.log('[HelpDesk] school_id:', schoolId);
     console.log('[HelpDesk] content:', content);
 
@@ -250,14 +252,14 @@ const createHelpDeskMessage = async (req, res) => {
 
     if (!adminUser) {
       console.error('[HelpDesk] No active admin found in school:', schoolId);
-      return res.status(404).json({ 
-        success: false, 
-        error: 'No active administrator found in your school. Please contact support.' 
+      return res.status(404).json({
+        success: false,
+        error: 'No active administrator found in your school. Please contact support.'
       });
     }
 
     const receiver_id = adminUser.id;
-    console.log('[HelpDesk] Found admin receiver:', receiver_id, adminUser.role_name, adminUser.first_name, adminUser.last_name);
+    console.log('[HelpDesk] Found admin receiver:', receiver_id, adminUser.role_name, adminUser.first_name, adminUser.last_name, adminUser.email);
 
     // Create the message
     const [message] = await db('messages').insert({
@@ -269,6 +271,9 @@ const createHelpDeskMessage = async (req, res) => {
     }).returning('*');
 
     console.log('[HelpDesk] Message created with ID:', message.id);
+    console.log('[HelpDesk] Message sender_id:', message.sender_id);
+    console.log('[HelpDesk] Message receiver_id:', message.receiver_id);
+    console.log('[HelpDesk] IMPORTANT: When admin replies, they must reply to sender_id:', message.sender_id);
 
     // Create notification for the admin
     try {
@@ -282,25 +287,26 @@ const createHelpDeskMessage = async (req, res) => {
         is_read: false
       }).returning('*');
 
-      console.log('[HelpDesk] Notification created with ID:', notification.id);
+      console.log('[HelpDesk] Notification created with ID:', notification.id, 'for admin:', receiver_id);
     } catch (notifError) {
       console.error('[HelpDesk] Failed to create notification:', notifError);
       // Don't fail the request if notification creation fails
     }
 
-    res.status(201).json({ 
-      success: true, 
+    console.log('[HelpDesk] ===== CREATE HELPDESK MESSAGE END =====');
+    res.status(201).json({
+      success: true,
       data: message,
-      message: 'Your message has been sent to the support team.'
+      message: 'Your message has been sent. An administrator will respond shortly.'
     });
   } catch (error) {
     console.error('[HelpDesk] Error creating message:', error);
     console.error('[HelpDesk] Error name:', error.name);
     console.error('[HelpDesk] Error message:', error.message);
     console.error('[HelpDesk] Error stack:', error.stack);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to send message. Please try again.' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send message. Please try again.'
     });
   }
 };
