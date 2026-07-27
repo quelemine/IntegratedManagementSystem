@@ -268,6 +268,7 @@ const getTuitionStructures = async (req, res) => {
     const { grade_id, academic_year } = req.query;
     const schoolId = req.user.school_id;
     console.log('[getTuitionStructures] User school_id:', schoolId);
+    console.log('[getTuitionStructures] User ID:', req.user.id);
     console.log('[getTuitionStructures] Query params:', { grade_id, academic_year });
 
     if (!schoolId) {
@@ -278,6 +279,7 @@ const getTuitionStructures = async (req, res) => {
       });
     }
 
+    console.log('[getTuitionStructures] Executing query for school_id:', schoolId);
     let query = db('tuition_structures')
       .select(
         'tuition_structures.*',
@@ -296,23 +298,30 @@ const getTuitionStructures = async (req, res) => {
     }
 
     const structures = await query.orderBy('tuition_structures.academic_year', 'desc');
-    console.log('[getTuitionStructures] Found structures:', structures.length);
+    console.log('[getTuitionStructures] Query successful. Found structures:', structures.length);
+    console.log('[getTuitionStructures] Structures data:', JSON.stringify(structures));
 
     res.json({
       success: true,
       data: structures
     });
   } catch (error) {
-    console.error('[getTuitionStructures] Error:', error);
+    console.error('[getTuitionStructures] Error occurred:', error);
+    console.error('[getTuitionStructures] Error name:', error.name);
+    console.error('[getTuitionStructures] Error message:', error.message);
+    console.error('[getTuitionStructures] Error stack:', error.stack);
+    
     if (error.message && error.message.includes('does not exist')) {
       return res.status(500).json({
         success: false,
         error: 'Tuition structures table not found. Please run database migrations.'
       });
     }
+    
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch tuition structures'
+      error: 'Failed to fetch tuition structures',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -358,6 +367,7 @@ const getClassFees = async (req, res) => {
     const { class_id, academic_year } = req.query;
     const schoolId = req.user.school_id;
     console.log('[getClassFees] User school_id:', schoolId);
+    console.log('[getClassFees] User ID:', req.user.id);
     console.log('[getClassFees] Query params:', { class_id, academic_year });
 
     if (!schoolId) {
@@ -368,6 +378,7 @@ const getClassFees = async (req, res) => {
       });
     }
 
+    console.log('[getClassFees] Executing query for school_id:', schoolId);
     let query = db('class_fees')
       .select(
         'class_fees.*',
@@ -388,23 +399,30 @@ const getClassFees = async (req, res) => {
     }
 
     const fees = await query.orderBy('class_fees.academic_year', 'desc');
-    console.log('[getClassFees] Found fees:', fees.length);
+    console.log('[getClassFees] Query successful. Found fees:', fees.length);
+    console.log('[getClassFees] Fees data:', JSON.stringify(fees));
 
     res.json({
       success: true,
       data: fees
     });
   } catch (error) {
-    console.error('[getClassFees] Error:', error);
+    console.error('[getClassFees] Error occurred:', error);
+    console.error('[getClassFees] Error name:', error.name);
+    console.error('[getClassFees] Error message:', error.message);
+    console.error('[getClassFees] Error stack:', error.stack);
+    
     if (error.message && error.message.includes('does not exist')) {
       return res.status(500).json({
         success: false,
         error: 'Class fees table not found. Please run database migrations.'
       });
     }
+    
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch class fees'
+      error: 'Failed to fetch class fees',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -449,6 +467,7 @@ const getDiscounts = async (req, res) => {
   try {
     const schoolId = req.user.school_id;
     console.log('[getDiscounts] User school_id:', schoolId);
+    console.log('[getDiscounts] User ID:', req.user.id);
 
     if (!schoolId) {
       console.error('[getDiscounts] Missing school_id for user:', req.user.id);
@@ -458,27 +477,36 @@ const getDiscounts = async (req, res) => {
       });
     }
 
+    console.log('[getDiscounts] Executing query for school_id:', schoolId);
     const discounts = await db('discounts')
       .where('school_id', schoolId)
       .where('is_active', true)
       .orderBy('name');
 
-    console.log('[getDiscounts] Found discounts:', discounts.length);
+    console.log('[getDiscounts] Query successful. Found discounts:', discounts.length);
+    console.log('[getDiscounts] Discounts data:', JSON.stringify(discounts));
+
     res.json({
       success: true,
       data: discounts
     });
   } catch (error) {
-    console.error('[getDiscounts] Error:', error);
+    console.error('[getDiscounts] Error occurred:', error);
+    console.error('[getDiscounts] Error name:', error.name);
+    console.error('[getDiscounts] Error message:', error.message);
+    console.error('[getDiscounts] Error stack:', error.stack);
+    
     if (error.message && error.message.includes('does not exist')) {
       return res.status(500).json({
         success: false,
         error: 'Discounts table not found. Please run database migrations.'
       });
     }
+    
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch discounts'
+      error: 'Failed to fetch discounts',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -526,6 +554,7 @@ const getScholarships = async (req, res) => {
     const { academic_year } = req.query;
     const schoolId = req.user.school_id;
     console.log('[getScholarships] User school_id:', schoolId);
+    console.log('[getScholarships] User ID:', req.user.id);
     console.log('[getScholarships] Query params:', { academic_year });
 
     if (!schoolId) {
@@ -536,6 +565,7 @@ const getScholarships = async (req, res) => {
       });
     }
 
+    console.log('[getScholarships] Executing query for school_id:', schoolId);
     let query = db('scholarships')
       .where('school_id', schoolId)
       .where('is_active', true);
@@ -545,23 +575,30 @@ const getScholarships = async (req, res) => {
     }
 
     const scholarships = await query.orderBy('name');
-    console.log('[getScholarships] Found scholarships:', scholarships.length);
+    console.log('[getScholarships] Query successful. Found scholarships:', scholarships.length);
+    console.log('[getScholarships] Scholarships data:', JSON.stringify(scholarships));
 
     res.json({
       success: true,
       data: scholarships
     });
   } catch (error) {
-    console.error('[getScholarships] Error:', error);
+    console.error('[getScholarships] Error occurred:', error);
+    console.error('[getScholarships] Error name:', error.name);
+    console.error('[getScholarships] Error message:', error.message);
+    console.error('[getScholarships] Error stack:', error.stack);
+    
     if (error.message && error.message.includes('does not exist')) {
       return res.status(500).json({
         success: false,
         error: 'Scholarships table not found. Please run database migrations.'
       });
     }
+    
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch scholarships'
+      error: 'Failed to fetch scholarships',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
