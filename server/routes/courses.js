@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken, authorize } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
+const { authorize } = require('../middleware/authorization');
 const db = require('../config/database');
 
 // Get all courses for the school
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const schoolId = req.user.school_id;
     
@@ -31,7 +32,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // Get a single course by ID
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticate, async (req, res) => {
   try {
     const schoolId = req.user.school_id;
     const { id } = req.params;
@@ -64,7 +65,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Create a new course (admin/teacher only)
-router.post('/', authenticateToken, authorize(['admin', 'principal', 'teacher']), async (req, res) => {
+router.post('/', authenticate, authorize(['admin', 'principal', 'teacher']), async (req, res) => {
   try {
     const schoolId = req.user.school_id;
     const { subject_id, grade_id, teacher_id, name, description, academic_year } = req.body;
@@ -96,7 +97,7 @@ router.post('/', authenticateToken, authorize(['admin', 'principal', 'teacher'])
 });
 
 // Update a course (admin/teacher only)
-router.put('/:id', authenticateToken, authorize(['admin', 'principal', 'teacher']), async (req, res) => {
+router.put('/:id', authenticate, authorize(['admin', 'principal', 'teacher']), async (req, res) => {
   try {
     const schoolId = req.user.school_id;
     const { id } = req.params;
@@ -133,7 +134,7 @@ router.put('/:id', authenticateToken, authorize(['admin', 'principal', 'teacher'
 });
 
 // Delete a course (admin only)
-router.delete('/:id', authenticateToken, authorize(['admin', 'principal']), async (req, res) => {
+router.delete('/:id', authenticate, authorize(['admin', 'principal']), async (req, res) => {
   try {
     const schoolId = req.user.school_id;
     const { id } = req.params;
