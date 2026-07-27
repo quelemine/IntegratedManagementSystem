@@ -4,17 +4,27 @@ const { logAction } = require('../middleware/audit');
 
 /**
  * Generate email from name (first initial + last name)
- * Example: John Doe → jdoe@simtechinstitute.edu
+ * Handles middle names by taking initials of all first name parts
+ * Examples:
+ * - John Doe → jdoe@simtechinstitute.edu
+ * - Jane Smith → jsmith@simtechinstitute.edu
+ * - John Michael Doe → jmdoe@simtechinstitute.edu
+ * - Mary Ann Johnson → majohnson@simtechinstitute.edu
  */
 const generateEmailFromName = (firstName, lastName, schoolDomain = 'simtechinstitute.edu') => {
-  // Get first initial (first character of first name)
-  const firstInitial = firstName.charAt(0).toLowerCase();
+  // Split first name into parts (handles middle names)
+  const firstNameParts = firstName.trim().split(/\s+/);
+  
+  // Get initials from all first name parts
+  const firstNameInitials = firstNameParts
+    .map(part => part.charAt(0).toLowerCase())
+    .join('');
   
   // Get last name (lowercase, remove spaces/special characters)
   const cleanLastName = lastName.toLowerCase().replace(/[^a-z0-9]/g, '');
   
-  // Combine: first initial + last name
-  const emailPrefix = `${firstInitial}${cleanLastName}`;
+  // Combine: first name initials + last name
+  const emailPrefix = `${firstNameInitials}${cleanLastName}`;
   
   return `${emailPrefix}@${schoolDomain}`;
 };

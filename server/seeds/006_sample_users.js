@@ -1,6 +1,59 @@
 const bcrypt = require('bcryptjs');
 
 /**
+ * Generate email from name (first initial + last name)
+ * Handles middle names by taking initials of all first name parts
+ * Examples:
+ * - John Doe → jdoe@simtechinstitute.edu
+ * - Jane Smith → jsmith@simtechinstitute.edu
+ * - John Michael Doe → jmdoe@simtechinstitute.edu
+ * - Mary Ann Johnson → majohnson@simtechinstitute.edu
+ */
+const generateEmailFromName = (firstName, lastName, schoolDomain = 'simtechinstitute.edu') => {
+  // Split first name into parts (handles middle names)
+  const firstNameParts = firstName.trim().split(/\s+/);
+  
+  // Get initials from all first name parts
+  const firstNameInitials = firstNameParts
+    .map(part => part.charAt(0).toLowerCase())
+    .join('');
+  
+  // Get last name (lowercase, remove spaces/special characters)
+  const cleanLastName = lastName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  
+  // Combine: first name initials + last name
+  const emailPrefix = `${firstNameInitials}${cleanLastName}`;
+  
+  return `${emailPrefix}@${schoolDomain}`;
+};
+
+/**
+ * Generate unique email from name (handles duplicates)
+ */
+const generateUniqueEmail = async (knex, firstName, lastName, schoolDomain = 'simtechinstitute.edu') => {
+  let baseEmail = generateEmailFromName(firstName, lastName, schoolDomain);
+  let email = baseEmail;
+  let counter = 1;
+  
+  while (true) {
+    const existingUser = await knex('users').where('email', email).first();
+    if (!existingUser) {
+      break;
+    }
+    
+    const cleanLastName = lastName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const firstNameParts = firstName.trim().split(/\s+/);
+    const firstNameInitials = firstNameParts
+      .map(part => part.charAt(0).toLowerCase())
+      .join('');
+    email = `${firstNameInitials}${cleanLastName}${counter}@${schoolDomain}`;
+    counter++;
+  }
+  
+  return email;
+};
+
+/**
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
@@ -21,32 +74,25 @@ exports.seed = async function(knex) {
   
   // Principals
   const principals = [
-    {
-      school_id: schoolId,
-      email: 'principal.elementary@simtechinstitute.edu',
-      password: hashedPassword,
-      role_id: principalRoleId,
-      first_name: 'Sarah',
-      last_name: 'Johnson',
-      phone: '+231880857970',
-      is_active: true
-    },
-    {
-      school_id: schoolId,
-      email: 'principal.senior@simtechinstitute.edu',
-      password: hashedPassword,
-      role_id: principalRoleId,
-      first_name: 'James',
-      last_name: 'Williams',
-      phone: '+231880857971',
-      is_active: true
-    }
+    { first: 'Sarah', last: 'Johnson' },
+    { first: 'James', last: 'Williams' }
   ];
-  principals.forEach(user => {
-    if (!existingEmails.includes(user.email)) {
-      usersToInsert.push(user);
+  
+  for (const principal of principals) {
+    const email = await generateUniqueEmail(knex, principal.first, principal.last);
+    if (!existingEmails.includes(email)) {
+      usersToInsert.push({
+        school_id: schoolId,
+        email: email,
+        password: hashedPassword,
+        role_id: principalRoleId,
+        first_name: principal.first,
+        last_name: principal.last,
+        phone: '+231880857970',
+        is_active: true
+      });
     }
-  });
+  }
   
   // Teachers
   const teachers = [
@@ -58,7 +104,7 @@ exports.seed = async function(knex) {
   ];
   
   for (let i = 0; i < teachers.length; i++) {
-    const email = `teacher.${teachers[i].first.toLowerCase()}@simtechinstitute.edu`;
+    const email = await generateUniqueEmail(knex, teachers[i].first, teachers[i].last);
     if (!existingEmails.includes(email)) {
       usersToInsert.push({
         school_id: schoolId,
@@ -73,17 +119,30 @@ exports.seed = async function(knex) {
     }
   }
   
-  // Parents
-  for (let i = 0; i < 10; i++) {
-    const email = `parent${i + 1}@simtechinstitute.edu`;
+  // Parents with realistic names
+  const parents = [
+    { first: 'Robert', last: 'Anderson' },
+    { first: 'David', last: 'Thomas' },
+    { first: 'Jennifer', last: 'White' },
+    { first: 'Richard', last: 'Harris' },
+    { first: 'Patricia', last: 'Martin' },
+    { first: 'Charles', last: 'Thompson' },
+    { first: 'Linda', last: 'Garcia' },
+    { first: 'Joseph', last: 'Martinez' },
+    { first: 'Elizabeth', last: 'Robinson' },
+    { first: 'Thomas', last: 'Clark' }
+  ];
+  
+  for (let i = 0; i < parents.length; i++) {
+    const email = await generateUniqueEmail(knex, parents[i].first, parents[i].last);
     if (!existingEmails.includes(email)) {
       usersToInsert.push({
         school_id: schoolId,
         email: email,
         password: hashedPassword,
         role_id: parentRoleId,
-        first_name: `Parent${i + 1}`,
-        last_name: `Surname${i + 1}`,
+        first_name: parents[i].first,
+        last_name: parents[i].last,
         phone: `+231880857${977 + i}`,
         is_active: true
       });
@@ -92,47 +151,31 @@ exports.seed = async function(knex) {
   
   // Staff
   const staff = [
-    {
-      school_id: schoolId,
-      email: 'accountant@simtechinstitute.edu',
-      password: hashedPassword,
-      role_id: staffRoleId,
-      first_name: 'Robert',
-      last_name: 'Anderson',
-      phone: '+231880857987',
-      is_active: true
-    },
-    {
-      school_id: schoolId,
-      email: 'security@simtechinstitute.edu',
-      password: hashedPassword,
-      role_id: staffRoleId,
-      first_name: 'David',
-      last_name: 'Thomas',
-      phone: '+231880857988',
-      is_active: true
-    },
-    {
-      school_id: schoolId,
-      email: 'admin.staff@simtechinstitute.edu',
-      password: hashedPassword,
-      role_id: staffRoleId,
-      first_name: 'Jennifer',
-      last_name: 'White',
-      phone: '+231880857989',
-      is_active: true
-    }
+    { first: 'Robert', last: 'Anderson' },
+    { first: 'David', last: 'Thomas' },
+    { first: 'Jennifer', last: 'White' }
   ];
-  staff.forEach(user => {
-    if (!existingEmails.includes(user.email)) {
-      usersToInsert.push(user);
+  
+  for (let i = 0; i < staff.length; i++) {
+    const email = await generateUniqueEmail(knex, staff[i].first, staff[i].last);
+    if (!existingEmails.includes(email)) {
+      usersToInsert.push({
+        school_id: schoolId,
+        email: email,
+        password: hashedPassword,
+        role_id: staffRoleId,
+        first_name: staff[i].first,
+        last_name: staff[i].last,
+        phone: `+231880857${987 + i}`,
+        is_active: true
+      });
     }
-  });
+  }
   
   // Insert only new users
   if (usersToInsert.length > 0) {
     await knex('users').insert(usersToInsert);
   }
   
-  console.log(`Processed ${usersToInsert.length} new sample users`);
+  console.log(`Processed ${usersToInsert.length} new sample users with name-based emails`);
 };

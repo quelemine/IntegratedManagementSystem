@@ -4,18 +4,28 @@
  */
 exports.seed = async function(knex) {
   const schoolId = process.env.SEED_SCHOOL_ID || (await knex('schools').first('id')).id;
+  const teacherRoleId = process.env.SEED_ROLE_TEACHER_ID || (await knex('roles').where('name', 'teacher').first('id')).id;
+  const staffRoleId = process.env.SEED_ROLE_STAFF_ID || (await knex('roles').where('name', 'staff').first('id')).id;
   
-  // Get teacher user IDs
+  // Get teacher user IDs by role and names (new email format: mbrown@simtechinstitute.edu)
   const teacherUsers = await knex('users')
-    .where('email', 'like', 'teacher.%')
-    .orderBy('email')
-    .select('id');
+    .join('roles', 'users.role_id', 'roles.id')
+    .where('roles.name', 'teacher')
+    .where('users.school_id', schoolId)
+    .whereIn('users.first_name', ['Mary', 'John', 'Emily', 'Michael', 'Lisa'])
+    .whereIn('users.last_name', ['Brown', 'Davis', 'Miller', 'Wilson', 'Taylor'])
+    .orderBy('users.first_name')
+    .select('users.id', 'users.first_name', 'users.last_name');
   
-  // Get staff user IDs
+  // Get staff user IDs by role and names (new email format: randerson@simtechinstitute.edu)
   const staffUsers = await knex('users')
-    .whereIn('email', ['accountant@simtechinstitute.edu', 'security@simtechinstitute.edu', 'admin.staff@simtechinstitute.edu'])
-    .orderBy('email')
-    .select('id');
+    .join('roles', 'users.role_id', 'roles.id')
+    .where('roles.name', 'staff')
+    .where('users.school_id', schoolId)
+    .whereIn('users.first_name', ['Robert', 'David', 'Jennifer'])
+    .whereIn('users.last_name', ['Anderson', 'Thomas', 'White'])
+    .orderBy('users.first_name')
+    .select('users.id', 'users.first_name', 'users.last_name');
   
   // Get existing teacher user IDs
   const existingTeachers = await knex('teachers').select('user_id');
@@ -25,7 +35,7 @@ exports.seed = async function(knex) {
   const teachersToInsert = [];
   const teacherData = [
     {
-      user_id: teacherUsers[0]?.id,
+      user_id: teacherUsers.find(u => u.first_name === 'Mary' && u.last_name === 'Brown')?.id,
       employee_id: 'STF-2024-0001',
       qualification: 'B.Ed English',
       specialization: 'English Language',
@@ -35,7 +45,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      user_id: teacherUsers[1]?.id,
+      user_id: teacherUsers.find(u => u.first_name === 'John' && u.last_name === 'Davis')?.id,
       employee_id: 'STF-2024-0002',
       qualification: 'B.Sc Mathematics',
       specialization: 'Mathematics',
@@ -45,7 +55,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      user_id: teacherUsers[2]?.id,
+      user_id: teacherUsers.find(u => u.first_name === 'Emily' && u.last_name === 'Miller')?.id,
       employee_id: 'STF-2024-0003',
       qualification: 'B.Sc Biology',
       specialization: 'Science',
@@ -55,7 +65,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      user_id: teacherUsers[3]?.id,
+      user_id: teacherUsers.find(u => u.first_name === 'Michael' && u.last_name === 'Wilson')?.id,
       employee_id: 'STF-2024-0004',
       qualification: 'B.A History',
       specialization: 'Social Studies',
@@ -65,7 +75,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      user_id: teacherUsers[4]?.id,
+      user_id: teacherUsers.find(u => u.first_name === 'Lisa' && u.last_name === 'Taylor')?.id,
       employee_id: 'STF-2024-0005',
       qualification: 'B.Sc Computer Science',
       specialization: 'ICT',
@@ -94,7 +104,7 @@ exports.seed = async function(knex) {
   const staffToInsert = [];
   const staffData = [
     {
-      user_id: staffUsers[0]?.id,
+      user_id: staffUsers.find(u => u.first_name === 'Robert' && u.last_name === 'Anderson')?.id,
       employee_id: 'STF-2024-0006',
       department: 'Finance',
       position: 'Accountant',
@@ -103,7 +113,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      user_id: staffUsers[1]?.id,
+      user_id: staffUsers.find(u => u.first_name === 'David' && u.last_name === 'Thomas')?.id,
       employee_id: 'STF-2024-0007',
       department: 'Security',
       position: 'Security Officer',
@@ -112,7 +122,7 @@ exports.seed = async function(knex) {
       status: 'active'
     },
     {
-      user_id: staffUsers[2]?.id,
+      user_id: staffUsers.find(u => u.first_name === 'Jennifer' && u.last_name === 'White')?.id,
       employee_id: 'STF-2024-0008',
       department: 'Administration',
       position: 'Administrative Assistant',
@@ -132,9 +142,19 @@ exports.seed = async function(knex) {
     await knex('staff').insert(staffToInsert);
   }
   
-  // Update divisions with principals
-  const elementaryPrincipal = await knex('users').where('email', 'principal.elementary@simtechinstitute.edu').first('id');
-  const seniorPrincipal = await knex('users').where('email', 'principal.senior@simtechinstitute.edu').first('id');
+  // Update divisions with principals (new email format: sjohnson@simtechinstitute.edu)
+  const elementaryPrincipal = await knex('users')
+    .join('roles', 'users.role_id', 'roles.id')
+    .where('roles.name', 'principal')
+    .where('users.first_name', 'Sarah')
+    .where('users.last_name', 'Johnson')
+    .first('users.id');
+  const seniorPrincipal = await knex('users')
+    .join('roles', 'users.role_id', 'roles.id')
+    .where('roles.name', 'principal')
+    .where('users.first_name', 'James')
+    .where('users.last_name', 'Williams')
+    .first('users.id');
   const elementaryDivision = await knex('divisions').where('code', 'ELE001').first('id');
   const seniorDivision = await knex('divisions').where('code', 'SHS001').first('id');
   
