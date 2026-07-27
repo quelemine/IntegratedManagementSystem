@@ -2,15 +2,13 @@ const knex = require('knex');
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 
 const db = knex({
-  client: process.env.DB_CLIENT || 'pg',
-  connection: process.env.DB_CLIENT === 'pg' ? {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD
-  } : {
-    filename: process.env.DB_FILE || './server/database.sqlite3'
+  client: 'pg',
+  connection: process.env.DATABASE_URL || {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_NAME || 'integrated_management_system',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres'
   },
   useNullAsDefault: true,
   pool: {
