@@ -338,6 +338,12 @@ function Dashboard() {
               >
                 Audit Logs
               </button>
+              <button
+                onClick={() => navigate('/documents')}
+                className="bg-indigo-800 text-white px-4 py-3 rounded-md hover:bg-indigo-900"
+              >
+                Documents
+              </button>
             </div>
           </div>
         )}
@@ -372,6 +378,19 @@ function Dashboard() {
                 Grade Reports
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Teacher Only - Documents */}
+        {user.role === 'teacher' && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">My Documents</h3>
+            <button
+              onClick={() => navigate('/documents')}
+              className="bg-indigo-600 text-white px-4 py-3 rounded-md hover:bg-indigo-700"
+            >
+              Manage Documents
+            </button>
           </div>
         )}
 
@@ -463,6 +482,12 @@ function Dashboard() {
                 className="bg-lime-600 text-white px-4 py-3 rounded-md hover:bg-lime-700"
               >
                 My Quizzes
+              </button>
+              <button
+                onClick={() => navigate('/documents')}
+                className="bg-indigo-600 text-white px-4 py-3 rounded-md hover:bg-indigo-700"
+              >
+                My Documents
               </button>
             </div>
           </div>

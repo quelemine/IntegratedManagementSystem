@@ -121,6 +121,7 @@ app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/audit', require('./routes/audit'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/documents', require('./routes/documents'));
 
 // 404 handler
 app.use(notFoundHandler);
