@@ -106,6 +106,7 @@ app.use('/api/grades', require('./routes/grades'));
 app.use('/api/classes', require('./routes/classes'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/teachers', require('./routes/teachers'));
+app.use('/api/parents', require('./routes/parents'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/courses', require('./routes/courses'));
