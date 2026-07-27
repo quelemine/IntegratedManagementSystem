@@ -186,6 +186,7 @@ const getFeeCategories = async (req, res) => {
     const schoolId = req.user.school_id;
     console.log('[getFeeCategories] User school_id:', schoolId);
     console.log('[getFeeCategories] User ID:', req.user.id);
+    console.log('[getFeeCategories] Full user object:', JSON.stringify(req.user));
 
     if (!schoolId) {
       console.error('[getFeeCategories] Missing school_id for user:', req.user.id);
@@ -195,27 +196,36 @@ const getFeeCategories = async (req, res) => {
       });
     }
 
+    console.log('[getFeeCategories] Executing query for school_id:', schoolId);
     const categories = await db('fee_categories')
       .where('school_id', schoolId)
       .where('is_active', true)
       .orderBy('name');
 
-    console.log('[getFeeCategories] Found categories:', categories.length);
+    console.log('[getFeeCategories] Query successful. Found categories:', categories.length);
+    console.log('[getFeeCategories] Categories data:', JSON.stringify(categories));
+    
     res.json({
       success: true,
       data: categories
     });
   } catch (error) {
-    console.error('[getFeeCategories] Error:', error);
+    console.error('[getFeeCategories] Error occurred:', error);
+    console.error('[getFeeCategories] Error name:', error.name);
+    console.error('[getFeeCategories] Error message:', error.message);
+    console.error('[getFeeCategories] Error stack:', error.stack);
+    
     if (error.message && error.message.includes('does not exist')) {
       return res.status(500).json({
         success: false,
         error: 'Fee categories table not found. Please run database migrations.'
       });
     }
+    
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch fee categories'
+      error: 'Failed to fetch fee categories',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
