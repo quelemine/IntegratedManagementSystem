@@ -297,4 +297,18 @@ router.put('/profile', authenticate, auditLog('update'), authController.updatePr
  */
 router.post('/change-password', authenticate, validationRules.changePassword, validate, authController.changePassword);
 
+/**
+ * @swagger
+ * /api/auth/login-history:
+ *   get:
+ *     summary: Get user's login history
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Login history retrieved
+ */
+router.get('/login-history', authenticate, authController.getLoginHistory);
+
 module.exports = router;

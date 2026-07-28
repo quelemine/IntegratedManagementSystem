@@ -16,7 +16,30 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  xssFilter: true,
+  frameguard: { action: 'deny' }
+}));
 
 // CORS configuration
 app.use(cors({
@@ -39,6 +62,20 @@ const limiter = rateLimit({
   }
 });
 app.use(limiter);
+
+// Stricter rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 login attempts per windowMs
+  message: 'Too many login attempts from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    const isDev = process.env.NODE_ENV !== 'production';
+    const isLocalhost = req.ip === '::1' || req.ip === '127.0.0.1';
+    return isDev && isLocalhost;
+  }
+});
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -98,7 +135,7 @@ app.get('/health', async (req, res) => {
 });
 
 // API routes
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/schools', require('./routes/schools'));
 app.use('/api/divisions', require('./routes/divisions'));

@@ -4,6 +4,45 @@ const db = require('../config/database');
 const { logAction } = require('../middleware/audit');
 
 /**
+ * Check if account is locked due to too many failed attempts
+ */
+const isAccountLocked = async (email) => {
+  const recentFailures = await db('login_attempts')
+    .where('email', email)
+    .where('success', false)
+    .where('created_at', '>', db.raw("NOW() - INTERVAL '15 minutes'"))
+    .count('* as count')
+    .first();
+
+  return parseInt(recentFailures.count) >= 5; // Lock after 5 failed attempts
+};
+
+/**
+ * Record login attempt
+ */
+const recordLoginAttempt = async (email, userId, success, ipAddress, userAgent, failureReason = null) => {
+  await db('login_attempts').insert({
+    id: db.raw('gen_random_uuid()'),
+    user_id: userId,
+    email,
+    ip_address: ipAddress,
+    user_agent: userAgent,
+    success,
+    failure_reason: failureReason
+  });
+};
+
+/**
+ * Get user's login history
+ */
+const getLoginHistory = async (userId, limit = 20) => {
+  return await db('login_attempts')
+    .where('user_id', userId)
+    .orderBy('created_at', 'desc')
+    .limit(limit);
+};
+
+/**
  * Generate email from name (first initial + last name)
  * Handles middle names by taking initials of all first name parts
  * Examples:
@@ -121,22 +160,35 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Check if account is locked
+    const locked = await isAccountLocked(email);
+    if (locked) {
+      await recordLoginAttempt(email, null, false, req.ip, req.headers['user-agent'], 'Account locked');
+      return res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.' });
+    }
+
     // Find user
     const user = await db('users').where('email', email).first();
     if (!user) {
+      await recordLoginAttempt(email, null, false, req.ip, req.headers['user-agent'], 'Invalid email');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Check if user is active
     if (!user.is_active) {
+      await recordLoginAttempt(email, user.id, false, req.ip, req.headers['user-agent'], 'Account inactive');
       return res.status(401).json({ error: 'Account is inactive' });
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
+      await recordLoginAttempt(email, user.id, false, req.ip, req.headers['user-agent'], 'Invalid password');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Record successful login
+    await recordLoginAttempt(email, user.id, true, req.ip, req.headers['user-agent']);
 
     // Update last login
     await db('users').where('id', user.id).update({ last_login: new Date() });
@@ -542,5 +594,6 @@ module.exports = {
   changePassword,
   refreshToken,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  getLoginHistory
 };
