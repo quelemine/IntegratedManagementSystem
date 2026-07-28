@@ -10,10 +10,18 @@ const getStudentProgress = async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role;
 
+    console.log('[ACADEMIC PROGRESS] Get student progress request');
+    console.log('[ACADEMIC PROGRESS] Student ID:', studentId);
+    console.log('[ACADEMIC PROGRESS] User ID:', userId);
+    console.log('[ACADEMIC PROGRESS] User role:', userRole);
+    console.log('[ACADEMIC PROGRESS] Filters - term:', term, 'academicYear:', academicYear);
+
     // Students can only view their own progress
     if (userRole === 'student') {
       const student = await db('students').where('user_id', userId).first();
+      console.log('[ACADEMIC PROGRESS] Student lookup result:', !!student);
       if (!student || student.id !== studentId) {
+        console.error('[ACADEMIC PROGRESS] Access denied for student');
         return res.status(403).json({ success: false, error: 'Access denied' });
       }
     }
@@ -43,9 +51,13 @@ const getStudentProgress = async (req, res) => {
 
     const progress = await query.orderBy('academic_year', 'desc').orderBy('term', 'desc');
 
+    console.log('[ACADEMIC PROGRESS] Progress records found:', progress.length);
+    console.log('[ACADEMIC PROGRESS] Progress data:', JSON.stringify(progress));
+
     res.json({ success: true, data: progress });
   } catch (error) {
-    console.error('Get student progress error:', error);
+    console.error('[ACADEMIC PROGRESS] Get student progress error:', error);
+    console.error('[ACADEMIC PROGRESS] Error stack:', error.stack);
     res.status(500).json({ success: false, error: 'Failed to fetch academic progress' });
   }
 };
@@ -60,10 +72,18 @@ const getSubjectPerformance = async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role;
 
+    console.log('[ACADEMIC PROGRESS] Get subject performance request');
+    console.log('[ACADEMIC PROGRESS] Student ID:', studentId);
+    console.log('[ACADEMIC PROGRESS] User ID:', userId);
+    console.log('[ACADEMIC PROGRESS] User role:', userRole);
+    console.log('[ACADEMIC PROGRESS] Academic progress ID filter:', academicProgressId);
+
     // Students can only view their own performance
     if (userRole === 'student') {
       const student = await db('students').where('user_id', userId).first();
+      console.log('[ACADEMIC PROGRESS] Student lookup result:', !!student);
       if (!student || student.id !== studentId) {
+        console.error('[ACADEMIC PROGRESS] Access denied for student');
         return res.status(403).json({ success: false, error: 'Access denied' });
       }
     }
@@ -99,14 +119,19 @@ const getSubjectPerformance = async (req, res) => {
       const progressIds = await db('academic_progress')
         .where('student_id', studentId)
         .pluck('id');
+      console.log('[ACADEMIC PROGRESS] Academic progress IDs found:', progressIds);
       query = query.whereIn('subject_performance.academic_progress_id', progressIds);
     }
 
     const performance = await query.orderBy('subject_performance.created_at', 'desc');
 
+    console.log('[ACADEMIC PROGRESS] Subject performance records found:', performance.length);
+    console.log('[ACADEMIC PROGRESS] Subject performance data:', JSON.stringify(performance));
+
     res.json({ success: true, data: performance });
   } catch (error) {
-    console.error('Get subject performance error:', error);
+    console.error('[ACADEMIC PROGRESS] Get subject performance error:', error);
+    console.error('[ACADEMIC PROGRESS] Error stack:', error.stack);
     res.status(500).json({ success: false, error: 'Failed to fetch subject performance' });
   }
 };
@@ -473,10 +498,17 @@ const getAcademicHistory = async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role;
 
+    console.log('[ACADEMIC PROGRESS] Get academic history request');
+    console.log('[ACADEMIC PROGRESS] Student ID:', studentId);
+    console.log('[ACADEMIC PROGRESS] User ID:', userId);
+    console.log('[ACADEMIC PROGRESS] User role:', userRole);
+
     // Students can only view their own history
     if (userRole === 'student') {
       const student = await db('students').where('user_id', userId).first();
+      console.log('[ACADEMIC PROGRESS] Student lookup result:', !!student);
       if (!student || student.id !== studentId) {
+        console.error('[ACADEMIC PROGRESS] Access denied for student');
         return res.status(403).json({ success: false, error: 'Access denied' });
       }
     }
@@ -503,9 +535,13 @@ const getAcademicHistory = async (req, res) => {
       .orderBy('academic_year', 'desc')
       .orderBy('term', 'desc');
 
+    console.log('[ACADEMIC PROGRESS] Academic history records found:', history.length);
+    console.log('[ACADEMIC PROGRESS] Academic history data:', JSON.stringify(history));
+
     res.json({ success: true, data: history });
   } catch (error) {
-    console.error('Get academic history error:', error);
+    console.error('[ACADEMIC PROGRESS] Get academic history error:', error);
+    console.error('[ACADEMIC PROGRESS] Error stack:', error.stack);
     res.status(500).json({ success: false, error: 'Failed to fetch academic history' });
   }
 };
