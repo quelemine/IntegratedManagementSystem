@@ -290,10 +290,104 @@ const deleteInvoice = async (req, res) => {
   }
 };
 
+/**
+ * Get overdue invoices
+ */
+const getOverdueInvoices = async (req, res) => {
+  try {
+    const schoolId = req.user.school_id;
+    const currentDate = new Date().toISOString().split('T')[0];
+
+    const overdueInvoices = await db('invoices')
+      .select(
+        'invoices.*',
+        'users.first_name as student_first_name',
+        'users.last_name as student_last_name',
+        'students.student_id as student_number'
+      )
+      .join('students', 'invoices.student_id', 'students.id')
+      .leftJoin('users', 'students.user_id', 'users.id')
+      .where('invoices.school_id', schoolId)
+      .where('invoices.due_date', '<', currentDate)
+      .where('invoices.status', '!=', 'paid')
+      .orderBy('invoices.due_date', 'asc');
+
+    res.json({
+      success: true,
+      data: overdueInvoices
+    });
+  } catch (error) {
+    console.error('Error fetching overdue invoices:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch overdue invoices'
+    });
+  }
+};
+
+/**
+ * Update invoice status based on payments
+ */
+const updateInvoiceStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const schoolId = req.user.school_id;
+
+    const invoice = await db('invoices')
+      .where('id', id)
+      .where('school_id', schoolId)
+      .first();
+
+    if (!invoice) {
+      return res.status(404).json({
+        success: false,
+        error: 'Invoice not found'
+      });
+    }
+
+    // Calculate paid amount
+    const payments = await db('payments')
+      .where('invoice_id', id)
+      .where('status', 'completed');
+    
+    const paidAmount = payments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+    const balanceDue = parseFloat(invoice.total_amount) - paidAmount;
+
+    let newStatus = invoice.status;
+    if (balanceDue <= 0) {
+      newStatus = 'paid';
+    } else if (paidAmount > 0) {
+      newStatus = 'partial';
+    }
+
+    const [updatedInvoice] = await db('invoices')
+      .where('id', id)
+      .update({ status: newStatus })
+      .returning('*');
+
+    res.json({
+      success: true,
+      data: {
+        ...updatedInvoice,
+        paid_amount: paidAmount,
+        balance_due: balanceDue
+      }
+    });
+  } catch (error) {
+    console.error('Error updating invoice status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update invoice status'
+    });
+  }
+};
+
 module.exports = {
   getInvoices,
   getInvoiceById,
   createInvoice,
   updateInvoice,
-  deleteInvoice
+  deleteInvoice,
+  getOverdueInvoices,
+  updateInvoiceStatus
 };

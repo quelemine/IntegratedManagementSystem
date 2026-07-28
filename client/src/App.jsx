@@ -37,6 +37,7 @@ import AcademicProgress from './pages/AcademicProgress'
 import TeacherGradeEntry from './pages/TeacherGradeEntry'
 import AdminAcademicReports from './pages/AdminAcademicReports'
 import ParentPortal from './pages/ParentPortal'
+import FinanceDashboard from './pages/FinanceDashboard'
 
 function App() {
   return (
@@ -79,6 +80,7 @@ function App() {
             <Route path="/grade-entry" element={<><TeacherGradeEntry /><HelpDesk /></>} />
             <Route path="/academic-reports" element={<><AdminAcademicReports /><HelpDesk /></>} />
             <Route path="/parent-portal" element={<><ParentPortal /><HelpDesk /></>} />
+            <Route path="/finance-dashboard" element={<><FinanceDashboard /><HelpDesk /></>} />
           </Routes>
         </AuthProvider>
       </Router>

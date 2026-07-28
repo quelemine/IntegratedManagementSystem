@@ -118,6 +118,136 @@ const getPaymentById = async (req, res) => {
 };
 
 /**
+ * Generate payment receipt
+ */
+const generateReceipt = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const schoolId = req.user.school_id;
+
+    const payment = await db('payments')
+      .select(
+        'payments.*',
+        'student_users.first_name as student_first_name',
+        'student_users.last_name as student_last_name',
+        'students.student_id as student_number',
+        'invoices.invoice_number',
+        'schools.name as school_name',
+        'schools.address as school_address',
+        'schools.phone as school_phone',
+        'users.first_name as received_by_first_name',
+        'users.last_name as received_by_last_name'
+      )
+      .leftJoin('students', 'payments.student_id', 'students.id')
+      .leftJoin('users as student_users', 'students.user_id', 'student_users.id')
+      .leftJoin('invoices', 'payments.invoice_id', 'invoices.id')
+      .leftJoin('schools', 'payments.school_id', 'schools.id')
+      .leftJoin('users', 'payments.recorded_by', 'users.id')
+      .where('payments.id', id)
+      .where('payments.school_id', schoolId)
+      .first();
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        error: 'Payment not found'
+      });
+    }
+
+    // Generate receipt number if not exists
+    const receiptNumber = payment.receipt_number || `REC-${new Date().getFullYear()}-${String(payment.id).substring(0, 8).toUpperCase()}`;
+
+    // Update payment with receipt number
+    if (!payment.receipt_number) {
+      await db('payments')
+        .where('id', id)
+        .update({ receipt_number: receiptNumber });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...payment,
+        receipt_number: receiptNumber,
+        receipt_date: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error generating receipt:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate receipt'
+    });
+  }
+};
+
+/**
+ * Get transaction history
+ */
+const getTransactionHistory = async (req, res) => {
+  try {
+    const { student_id, start_date, end_date, payment_method } = req.query;
+    const schoolId = req.user.school_id;
+    const userRole = req.user.role_name;
+
+    let query = db('payments')
+      .select(
+        'payments.*',
+        'student_users.first_name as student_first_name',
+        'student_users.last_name as student_last_name',
+        'students.student_id as student_number',
+        'invoices.invoice_number',
+        'users.first_name as recorded_by_first_name',
+        'users.last_name as recorded_by_last_name'
+      )
+      .leftJoin('students', 'payments.student_id', 'students.id')
+      .leftJoin('users as student_users', 'students.user_id', 'student_users.id')
+      .leftJoin('invoices', 'payments.invoice_id', 'invoices.id')
+      .leftJoin('users', 'payments.recorded_by', 'users.id')
+      .where('payments.school_id', schoolId);
+
+    // Role-based filtering
+    if (userRole === 'student') {
+      query = query.where('students.user_id', req.user.id);
+    } else if (userRole === 'parent') {
+      const linkedStudentIds = await db('parent_student_relationships')
+        .where('parent_id', req.user.id)
+        .pluck('student_id');
+      query = query.whereIn('payments.student_id', linkedStudentIds);
+    }
+
+    if (student_id) {
+      query = query.where('payments.student_id', student_id);
+    }
+
+    if (payment_method) {
+      query = query.where('payment_method', payment_method);
+    }
+
+    if (start_date) {
+      query = query.where('payment_date', '>=', start_date);
+    }
+
+    if (end_date) {
+      query = query.where('payment_date', '<=', end_date);
+    }
+
+    const transactions = await query.orderBy('payments.payment_date', 'desc');
+
+    res.json({
+      success: true,
+      data: transactions
+    });
+  } catch (error) {
+    console.error('Error fetching transaction history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch transaction history'
+    });
+  }
+};
+
+/**
  * Create payment
  */
 const createPayment = async (req, res) => {
@@ -320,6 +450,8 @@ const processRefund = async (req, res) => {
 module.exports = {
   getPayments,
   getPaymentById,
+  generateReceipt,
+  getTransactionHistory,
   createPayment,
   updatePayment,
   processRefund

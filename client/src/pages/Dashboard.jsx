@@ -450,27 +450,27 @@ function Dashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <button
                 onClick={() => navigate('/fees')}
-                className="bg-emerald-600 text-white px-4 py-3 rounded-md hover:bg-emerald-700"
+                className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700"
               >
                 Fees
               </button>
               <button
                 onClick={() => navigate('/invoices')}
-                className="bg-violet-600 text-white px-4 py-3 rounded-md hover:bg-violet-700"
+                className="bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700"
               >
                 Invoices
               </button>
               <button
                 onClick={() => navigate('/payments')}
-                className="bg-fuchsia-600 text-white px-4 py-3 rounded-md hover:bg-fuchsia-700"
+                className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700"
               >
                 Payments
               </button>
               <button
-                onClick={() => navigate('/financial-reports')}
-                className="bg-slate-600 text-white px-4 py-3 rounded-md hover:bg-slate-700"
+                onClick={() => navigate('/finance-dashboard')}
+                className="bg-yellow-600 text-white px-4 py-3 rounded-md hover:bg-yellow-700"
               >
-                Reports
+                Finance Dashboard
               </button>
             </div>
           </div>

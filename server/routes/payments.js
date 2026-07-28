@@ -155,4 +155,57 @@ router.put('/:id', authenticate, paymentController.updatePayment);
  */
 router.post('/:id/refund', authenticate, paymentController.processRefund);
 
+/**
+ * @swagger
+ * /api/payments/{id}/receipt:
+ *   get:
+ *     summary: Generate payment receipt
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Receipt generated successfully
+ */
+router.get('/:id/receipt', authenticate, paymentController.generateReceipt);
+
+/**
+ * @swagger
+ * /api/payments/transactions:
+ *   get:
+ *     summary: Get transaction history
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: student_id
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: start_date
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: end_date
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: payment_method
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Transaction history retrieved successfully
+ */
+router.get('/transactions', authenticate, paymentController.getTransactionHistory);
+
 module.exports = router;

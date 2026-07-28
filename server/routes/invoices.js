@@ -135,4 +135,38 @@ router.put('/:id', authenticate, invoiceController.updateInvoice);
  */
 router.delete('/:id', authenticate, invoiceController.deleteInvoice);
 
+/**
+ * @swagger
+ * /api/invoices/overdue:
+ *   get:
+ *     summary: Get overdue invoices
+ *     tags: [Invoices]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Overdue invoices retrieved successfully
+ */
+router.get('/overdue', authenticate, invoiceController.getOverdueInvoices);
+
+/**
+ * @swagger
+ * /api/invoices/{id}/status:
+ *   put:
+ *     summary: Update invoice status
+ *     tags: [Invoices]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Invoice status updated successfully
+ */
+router.put('/:id/status', authenticate, invoiceController.updateInvoiceStatus);
+
 module.exports = router;

@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from '../utils/axios';
+import { ArrowLeft, Download, TrendingUp, DollarSign, PieChart } from 'lucide-react';
 
 export default function FinancialReports() {
+  const navigate = useNavigate();
   const { token } = useAuth();
   const [activeTab, setActiveTab] = useState('summary');
   const [data, setData] = useState(null);
@@ -86,49 +89,65 @@ export default function FinancialReports() {
 
             {data?.payment_methods && data.payment_methods.length > 0 && (
               <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-3">Payments by Method</h3>
-                <table className="min-w-full bg-white border">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="px-4 py-2 border">Method</th>
-                      <th className="px-4 py-2 border">Count</th>
-                      <th className="px-4 py-2 border">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.payment_methods.map((method, index) => (
-                      <tr key={index}>
-                        <td className="px-4 py-2 border capitalize">{method.payment_method}</td>
-                        <td className="px-4 py-2 border">{method.count}</td>
-                        <td className="px-4 py-2 border">{method.total?.toLocaleString()} LRD</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold">Payments by Method</h3>
+                  <button className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm">
+                    <Download className="h-4 w-4" />
+                    Export
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {data.payment_methods.map((method, index) => (
+                    <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium capitalize">{method.payment_method}</span>
+                        <span className="text-sm text-gray-600">{method.count} transactions</span>
+                      </div>
+                      <p className="text-xl font-bold text-green-600">{method.total?.toLocaleString()} LRD</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="h-48 flex items-center justify-around">
+                  {data.payment_methods.map((method, index) => {
+                    const percentage = ((method.total / data.total_collected) * 100).toFixed(1);
+                    const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500'];
+                    return (
+                      <div key={index} className="flex flex-col items-center">
+                        <div
+                          className={`w-24 h-24 rounded-full flex items-center justify-center text-white font-bold ${colors[index % colors.length]}`}
+                          style={{ transform: `scale(${percentage / 100})` }}
+                        >
+                          {percentage}%
+                        </div>
+                        <p className="text-sm mt-2 capitalize">{method.payment_method}</p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
             {data?.invoice_status && data.invoice_status.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-lg font-semibold mb-3">Invoice Status Breakdown</h3>
-                <table className="min-w-full bg-white border">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="px-4 py-2 border">Status</th>
-                      <th className="px-4 py-2 border">Count</th>
-                      <th className="px-4 py-2 border">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.invoice_status.map((status, index) => (
-                      <tr key={index}>
-                        <td className="px-4 py-2 border capitalize">{status.status}</td>
-                        <td className="px-4 py-2 border">{status.count}</td>
-                        <td className="px-4 py-2 border">{status.total?.toLocaleString()} LRD</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {data.invoice_status.map((status, index) => {
+                    const colors = {
+                      paid: 'bg-green-500',
+                      partial: 'bg-yellow-500',
+                      pending: 'bg-red-500',
+                      overdue: 'bg-red-700'
+                    };
+                    const color = colors[status.status] || 'bg-gray-500';
+                    return (
+                      <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-600 capitalize">{status.status}</p>
+                        <p className="text-2xl font-bold">{status.count}</p>
+                        <p className="text-sm text-gray-600">{status.total?.toLocaleString()} LRD</p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
