@@ -344,6 +344,12 @@ function Dashboard() {
               >
                 Documents
               </button>
+              <button
+                onClick={() => navigate('/reports')}
+                className="bg-pink-800 text-white px-4 py-3 rounded-md hover:bg-pink-900"
+              >
+                Reports
+              </button>
             </div>
           </div>
         )}
@@ -488,6 +494,12 @@ function Dashboard() {
                 className="bg-indigo-600 text-white px-4 py-3 rounded-md hover:bg-indigo-700"
               >
                 My Documents
+              </button>
+              <button
+                onClick={() => navigate('/reports')}
+                className="bg-pink-600 text-white px-4 py-3 rounded-md hover:bg-pink-700"
+              >
+                My Reports
               </button>
             </div>
           </div>

@@ -28,6 +28,7 @@ import Announcements from './pages/Announcements'
 import Notifications from './pages/Notifications'
 import AuditLogs from './pages/AuditLogs'
 import Documents from './pages/Documents'
+import Reports from './pages/Reports'
 
 function App() {
   return (
@@ -61,6 +62,7 @@ function App() {
             <Route path="/notifications" element={<><Notifications /><HelpDesk /></>} />
             <Route path="/audit-logs" element={<><AuditLogs /><HelpDesk /></>} />
             <Route path="/documents" element={<><Documents /><HelpDesk /></>} />
+            <Route path="/reports" element={<><Reports /><HelpDesk /></>} />
           </Routes>
         </AuthProvider>
       </Router>
