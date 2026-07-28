@@ -6,87 +6,156 @@ const db = require('../config/database');
  */
 const getAdminAnalytics = async (req, res) => {
   try {
+    console.log('[DASHBOARD] Admin analytics request');
+    console.log('[DASHBOARD] User ID:', req.user?.id);
+    console.log('[DASHBOARD] User role_id:', req.user?.role_id);
+    console.log('[DASHBOARD] School ID:', req.user?.school_id);
+
     const schoolId = req.user.school_id;
 
+    if (!schoolId) {
+      console.error('[DASHBOARD] Missing school_id for user:', req.user?.id);
+      return res.status(400).json({ success: false, error: 'School ID is required' });
+    }
+
     // Get total students
-    const totalStudents = await db('students')
-      .where('school_id', schoolId)
-      .count('* as count')
-      .first();
+    let totalStudents;
+    try {
+      console.log('[DASHBOARD] Querying total students');
+      totalStudents = await db('students')
+        .where('school_id', schoolId)
+        .count('* as count')
+        .first();
+      console.log('[DASHBOARD] Total students query completed:', totalStudents?.count);
+    } catch (error) {
+      console.error('[DASHBOARD] Error querying students:', error.message);
+      totalStudents = { count: 0 };
+    }
 
     // Get total teachers
-    const totalTeachers = await db('teachers')
-      .join('users', 'teachers.user_id', 'users.id')
-      .where('teachers.school_id', schoolId)
-      .where('users.is_active', true)
-      .count('* as count')
-      .first();
+    let totalTeachers;
+    try {
+      console.log('[DASHBOARD] Querying total teachers');
+      totalTeachers = await db('teachers')
+        .join('users', 'teachers.user_id', 'users.id')
+        .where('teachers.school_id', schoolId)
+        .where('users.is_active', true)
+        .count('* as count')
+        .first();
+      console.log('[DASHBOARD] Total teachers query completed:', totalTeachers?.count);
+    } catch (error) {
+      console.error('[DASHBOARD] Error querying teachers:', error.message);
+      totalTeachers = { count: 0 };
+    }
 
     // Get total parents
-    const totalParents = await db('parents')
-      .join('users', 'parents.user_id', 'users.id')
-      .where('parents.school_id', schoolId)
-      .where('users.is_active', true)
-      .count('* as count')
-      .first();
+    let totalParents;
+    try {
+      console.log('[DASHBOARD] Querying total parents');
+      totalParents = await db('parents')
+        .join('users', 'parents.user_id', 'users.id')
+        .where('parents.school_id', schoolId)
+        .where('users.is_active', true)
+        .count('* as count')
+        .first();
+      console.log('[DASHBOARD] Total parents query completed:', totalParents?.count);
+    } catch (error) {
+      console.error('[DASHBOARD] Error querying parents:', error.message);
+      totalParents = { count: 0 };
+    }
 
     // Get total revenue (sum of payments)
-    const totalRevenue = await db('payments')
-      .where('school_id', schoolId)
-      .where('status', 'completed')
-      .sum('amount as total')
-      .first();
+    let totalRevenue;
+    try {
+      console.log('[DASHBOARD] Querying total revenue');
+      totalRevenue = await db('payments')
+        .where('school_id', schoolId)
+        .where('status', 'completed')
+        .sum('amount as total')
+        .first();
+      console.log('[DASHBOARD] Total revenue query completed:', totalRevenue?.total);
+    } catch (error) {
+      console.error('[DASHBOARD] Error querying revenue:', error.message);
+      totalRevenue = { total: 0 };
+    }
 
     // Get outstanding balances (sum of unpaid invoices)
-    const outstandingBalances = await db('invoices')
-      .where('school_id', schoolId)
-      .where('status', 'pending')
-      .sum('amount as total')
-      .first();
+    let outstandingBalances;
+    try {
+      console.log('[DASHBOARD] Querying outstanding balances');
+      outstandingBalances = await db('invoices')
+        .where('school_id', schoolId)
+        .where('status', 'pending')
+        .sum('amount as total')
+        .first();
+      console.log('[DASHBOARD] Outstanding balances query completed:', outstandingBalances?.total);
+    } catch (error) {
+      console.error('[DASHBOARD] Error querying invoices:', error.message);
+      outstandingBalances = { total: 0 };
+    }
 
     // Get attendance statistics (last 30 days)
-    const attendanceStats = await db('attendance')
-      .join('students', 'attendance.student_id', 'students.id')
-      .where('students.school_id', schoolId)
-      .where('attendance.date', '>=', db.raw("NOW() - INTERVAL '30 days'"))
-      .select(
-        db.raw('COUNT(*) FILTER (WHERE status = "present") as present'),
-        db.raw('COUNT(*) FILTER (WHERE status = "absent") as absent'),
-        db.raw('COUNT(*) FILTER (WHERE status = "late") as late'),
-        db.raw('COUNT(*) as total')
-      )
-      .first();
+    let attendanceStats;
+    try {
+      console.log('[DASHBOARD] Querying attendance statistics');
+      attendanceStats = await db('attendance')
+        .join('students', 'attendance.student_id', 'students.id')
+        .where('students.school_id', schoolId)
+        .where('attendance.date', '>=', db.raw("NOW() - INTERVAL '30 days'"))
+        .select(
+          db.raw('COUNT(*) FILTER (WHERE status = "present") as present'),
+          db.raw('COUNT(*) FILTER (WHERE status = "absent") as absent'),
+          db.raw('COUNT(*) FILTER (WHERE status = "late") as late'),
+          db.raw('COUNT(*) as total')
+        )
+        .first();
+      console.log('[DASHBOARD] Attendance stats query completed');
+    } catch (error) {
+      console.error('[DASHBOARD] Error querying attendance:', error.message);
+      attendanceStats = { present: 0, absent: 0, late: 0, total: 0 };
+    }
 
     // Get recent activity (last 10 audit logs)
-    const recentActivity = await db('audit_logs')
-      .join('users', 'audit_logs.user_id', 'users.id')
-      .where('audit_logs.school_id', schoolId)
-      .select('audit_logs.*', 'users.first_name', 'users.last_name')
-      .orderBy('audit_logs.timestamp', 'desc')
-      .limit(10);
+    let recentActivity;
+    try {
+      console.log('[DASHBOARD] Querying recent activity');
+      recentActivity = await db('audit_logs')
+        .join('users', 'audit_logs.user_id', 'users.id')
+        .where('audit_logs.school_id', schoolId)
+        .select('audit_logs.*', 'users.first_name', 'users.last_name')
+        .orderBy('audit_logs.timestamp', 'desc')
+        .limit(10);
+      console.log('[DASHBOARD] Recent activity query completed:', recentActivity?.length);
+    } catch (error) {
+      console.error('[DASHBOARD] Error querying audit logs:', error.message);
+      recentActivity = [];
+    }
+
+    const attendanceRate = attendanceStats && attendanceStats.total > 0 
+      ? ((parseInt(attendanceStats.present || 0) / parseInt(attendanceStats.total)) * 100).toFixed(1)
+      : 0;
 
     res.json({
       success: true,
       data: {
-        totalStudents: parseInt(totalStudents.count) || 0,
-        totalTeachers: parseInt(totalTeachers.count) || 0,
-        totalParents: parseInt(totalParents.count) || 0,
-        totalRevenue: parseFloat(totalRevenue.total) || 0,
-        outstandingBalances: parseFloat(outstandingBalances.total) || 0,
+        totalStudents: parseInt(totalStudents?.count) || 0,
+        totalTeachers: parseInt(totalTeachers?.count) || 0,
+        totalParents: parseInt(totalParents?.count) || 0,
+        totalRevenue: parseFloat(totalRevenue?.total) || 0,
+        outstandingBalances: parseFloat(outstandingBalances?.total) || 0,
         attendanceStats: {
-          present: parseInt(attendanceStats.present) || 0,
-          absent: parseInt(attendanceStats.absent) || 0,
-          late: parseInt(attendanceStats.late) || 0,
-          total: parseInt(attendanceStats.total) || 0,
-          attendanceRate: attendanceStats.total > 0 
-            ? ((parseInt(attendanceStats.present) / parseInt(attendanceStats.total)) * 100).toFixed(1)
-            : 0
+          present: parseInt(attendanceStats?.present) || 0,
+          absent: parseInt(attendanceStats?.absent) || 0,
+          late: parseInt(attendanceStats?.late) || 0,
+          total: parseInt(attendanceStats?.total) || 0,
+          attendanceRate: parseFloat(attendanceRate)
         },
         recentActivity
       }
     });
   } catch (error) {
-    console.error('Get admin analytics error:', error);
+    console.error('[DASHBOARD] Unhandled error:', error.message);
+    console.error('[DASHBOARD] Error stack:', error.stack);
     res.status(500).json({ success: false, error: 'Failed to fetch admin analytics' });
   }
 };
