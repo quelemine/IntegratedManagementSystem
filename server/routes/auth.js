@@ -279,19 +279,21 @@ router.put('/profile', authenticate, auditLog('update'), authController.updatePr
  *           schema:
  *             type: object
  *             required:
- *               - current_password
- *               - new_password
+ *               - currentPassword
+ *               - newPassword
  *             properties:
- *               current_password:
+ *               currentPassword:
  *                 type: string
- *               new_password:
+ *               newPassword:
  *                 type: string
  *                 minLength: 8
+ *               confirmPassword:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Password changed successfully
  *       400:
- *         description: Current password is incorrect
+ *         description: Current password is incorrect or validation failed
  */
 router.post('/change-password', authenticate, validationRules.changePassword, validate, authController.changePassword);
 

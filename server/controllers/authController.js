@@ -144,6 +144,9 @@ const login = async (req, res) => {
     // Log login
     await logAction(user.school_id, user.id, 'login', 'user', user.id, null, null, req.ip, req.headers['user-agent']);
 
+    // Check if user is using default password
+    const usingDefaultPassword = isDefaultPassword(password);
+
     // Generate tokens
     const token = generateToken({ 
       id: user.id, 
@@ -166,7 +169,8 @@ const login = async (req, res) => {
           last_name: user.last_name,
           role: role ? role.name : null,
           role_id: user.role_id,
-          school_id: user.school_id
+          school_id: user.school_id,
+          forcePasswordChange: usingDefaultPassword
         },
         token,
         refreshToken
@@ -260,41 +264,6 @@ const updateProfile = async (req, res) => {
 };
 
 /**
- * Change password
- */
-const changePassword = async (req, res) => {
-  try {
-    const { current_password, new_password } = req.body;
-
-    // Get user
-    const user = await db('users').where('id', req.user.id).first();
-
-    // Verify current password
-    const isValidPassword = await bcrypt.compare(current_password, user.password);
-    if (!isValidPassword) {
-      return res.status(400).json({ error: 'Current password is incorrect' });
-    }
-
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(new_password, 10);
-
-    // Update password
-    await db('users').where('id', req.user.id).update({
-      password: hashedPassword,
-      updated_at: new Date()
-    });
-
-    // Log password change
-    await logAction(req.user.school_id, req.user.id, 'update', 'user', req.user.id, { password: '***' }, { password: '***' }, req.ip, req.headers['user-agent']);
-
-    res.json({ message: 'Password changed successfully' });
-  } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({ error: 'Failed to change password' });
-  }
-};
-
-/**
  * Refresh token
  */
 const refreshToken = async (req, res) => {
@@ -336,42 +305,231 @@ const refreshToken = async (req, res) => {
 };
 
 /**
- * Forgot password (placeholder - sends email in production)
+ * Password strength validation
+ */
+const validatePasswordStrength = (password) => {
+  const minLength = 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  if (password.length < minLength) {
+    return { valid: false, message: 'Password must be at least 8 characters long' };
+  }
+  if (!hasUpperCase) {
+    return { valid: false, message: 'Password must contain at least one uppercase letter' };
+  }
+  if (!hasLowerCase) {
+    return { valid: false, message: 'Password must contain at least one lowercase letter' };
+  }
+  if (!hasNumbers) {
+    return { valid: false, message: 'Password must contain at least one number' };
+  }
+  if (!hasSpecialChar) {
+    return { valid: false, message: 'Password must contain at least one special character' };
+  }
+
+  return { valid: true };
+};
+
+/**
+ * Check if password is default (for forcing password change)
+ */
+const isDefaultPassword = (password) => {
+  const defaultPasswords = ['password', 'Password123', '12345678', 'admin', 'Admin123'];
+  return defaultPasswords.includes(password);
+};
+
+/**
+ * Generate secure random token
+ */
+const generateSecureToken = () => {
+  const crypto = require('crypto');
+  return crypto.randomBytes(32).toString('hex');
+};
+
+/**
+ * Forgot password - generates reset token
  */
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const user = await db('users').where('email', email).first();
-    if (!user) {
-      // Don't reveal if email exists
-      return res.json({ message: 'If email exists, password reset instructions will be sent' });
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
-    // In production, generate reset token and send email
-    // For now, just log it
-    console.log(`Password reset requested for: ${email}`);
+    const user = await db('users').where('email', email).first();
+    if (!user) {
+      // Don't reveal if email exists for security
+      return res.json({ 
+        success: true, 
+        message: 'If email exists, password reset instructions will be sent' 
+      });
+    }
 
-    res.json({ message: 'If email exists, password reset instructions will be sent' });
+    // Delete any existing unused tokens for this user
+    await db('password_reset_tokens')
+      .where('user_id', user.id)
+      .where('used', false)
+      .where('expires_at', '>', db.raw('NOW()'))
+      .del();
+
+    // Generate new token
+    const token = generateSecureToken();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    await db('password_reset_tokens').insert({
+      id: db.raw('gen_random_uuid()'),
+      user_id: user.id,
+      token,
+      expires_at: expiresAt,
+      used: false
+    });
+
+    // In production, send email with reset link
+    // For now, log the token (in production, never log tokens)
+    console.log(`Password reset token for ${email}: ${token}`);
+    console.log(`Reset link would be: http://yourdomain.com/reset-password?token=${token}`);
+
+    res.json({ 
+      success: true, 
+      message: 'If email exists, password reset instructions will be sent' 
+    });
   } catch (error) {
     console.error('Forgot password error:', error);
-    res.status(500).json({ error: 'Failed to process request' });
+    res.status(500).json({ success: false, error: 'Failed to process request' });
   }
 };
 
 /**
- * Reset password (placeholder)
+ * Reset password using token
  */
 const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
 
-    // In production, verify token and reset password
-    // For now, just return success
-    res.json({ message: 'Password reset successful' });
+    if (!token || !password) {
+      return res.status(400).json({ success: false, error: 'Token and password are required' });
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({ success: false, error: passwordValidation.message });
+    }
+
+    // Find valid token
+    const resetToken = await db('password_reset_tokens')
+      .where('token', token)
+      .where('used', false)
+      .where('expires_at', '>', db.raw('NOW()'))
+      .first();
+
+    if (!resetToken) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired token' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Update user password
+    await db('users')
+      .where('id', resetToken.user_id)
+      .update({ 
+        password: hashedPassword,
+        updated_at: db.raw('NOW()')
+      });
+
+    // Mark token as used
+    await db('password_reset_tokens')
+      .where('id', resetToken.id)
+      .update({ used: true });
+
+    // Log audit
+    await logAction(
+      null,
+      resetToken.user_id,
+      'update',
+      'user',
+      resetToken.user_id,
+      null,
+      { action: 'password_reset' },
+      req.ip,
+      req.headers['user-agent']
+    );
+
+    res.json({ success: true, message: 'Password reset successful' });
   } catch (error) {
     console.error('Reset password error:', error);
-    res.status(500).json({ error: 'Failed to reset password' });
+    res.status(500).json({ success: false, error: 'Failed to reset password' });
+  }
+};
+
+/**
+ * Change password (authenticated user)
+ */
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Current and new passwords are required' });
+    }
+
+    // Validate new password strength
+    const passwordValidation = validatePasswordStrength(newPassword);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({ success: false, error: passwordValidation.message });
+    }
+
+    // Check if new password is same as current
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ success: false, error: 'New password must be different from current password' });
+    }
+
+    // Get user
+    const user = await db('users').where('id', userId).first();
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // Verify current password
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ success: false, error: 'Current password is incorrect' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await db('users')
+      .where('id', userId)
+      .update({ 
+        password: hashedPassword,
+        updated_at: db.raw('NOW()')
+      });
+
+    // Log audit
+    await logAction(
+      req.user.school_id,
+      userId,
+      'update',
+      'user',
+      userId,
+      null,
+      { action: 'password_change' },
+      req.ip,
+      req.headers['user-agent']
+    );
+
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ success: false, error: 'Failed to change password' });
   }
 };
 

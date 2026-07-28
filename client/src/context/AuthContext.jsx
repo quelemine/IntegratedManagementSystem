@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
       setUser(userData)
       fetchUnreadCount()
       
-      return { success: true }
+      return { success: true, forcePasswordChange: userData.forcePasswordChange || false }
     } catch (error) {
       return { 
         success: false, 

@@ -3,6 +3,9 @@ import { AuthProvider } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import HelpDesk from './components/HelpDesk'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import ChangePassword from './pages/ChangePassword'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import Students from './pages/Students'
@@ -37,6 +40,9 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/change-password" element={<><ChangePassword /><HelpDesk /></>} />
             <Route path="/dashboard" element={<><Dashboard /><HelpDesk /></>} />
             <Route path="/profile" element={<><Profile /><HelpDesk /></>} />
             <Route path="/students" element={<><Students /><HelpDesk /></>} />

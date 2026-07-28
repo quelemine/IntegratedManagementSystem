@@ -58,11 +58,11 @@ const validationRules = {
   ],
   
   changePassword: [
-    body('current_password').notEmpty().withMessage('Current password required'),
-    body('new_password').isLength({ min: 8 }).withMessage('New password must be at least 8 characters'),
-    body('new_password').matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage('Password must contain uppercase, lowercase, and number'),
-    body('confirm_password').custom((value, { req }) => {
-      if (value !== req.body.new_password) {
+    body('currentPassword').notEmpty().withMessage('Current password required'),
+    body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+    body('newPassword').matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/).withMessage('Password must contain uppercase, lowercase, number, and special character'),
+    body('confirmPassword').custom((value, { req }) => {
+      if (value !== req.body.newPassword) {
         throw new Error('Passwords do not match');
       }
       return true;
@@ -76,8 +76,8 @@ const validationRules = {
   resetPassword: [
     body('token').notEmpty().withMessage('Reset token required'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-    body('password').matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/).withMessage('Password must contain uppercase, lowercase, and number'),
-    body('confirm_password').custom((value, { req }) => {
+    body('password').matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/).withMessage('Password must contain uppercase, lowercase, number, and special character'),
+    body('confirmPassword').custom((value, { req }) => {
       if (value !== req.body.password) {
         throw new Error('Passwords do not match');
       }
