@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { logAction } = require('../middleware/audit');
 
 /**
  * Get attendance by class and date
@@ -179,6 +180,22 @@ const createAttendance = async (req, res) => {
       })
       .returning('*');
 
+    // Log audit
+    await logAction(
+      schoolId,
+      recordedBy,
+      'create',
+      'attendance',
+      attendance.id,
+      null,
+      { student_id, class_id, date, status },
+      req.ip,
+      req.headers['user-agent']
+    );
+
+    // Check attendance threshold and notify parents if needed
+    await checkAttendanceThreshold(student_id, schoolId);
+
     res.status(201).json({
       success: true,
       data: attendance
@@ -282,7 +299,7 @@ const generateAttendanceReport = async (req, res) => {
         db.raw('COUNT(*) as total_days'),
         db.raw('ROUND((COUNT(*) FILTER (WHERE attendance.status = \'present\')::float / NULLIF(COUNT(*), 0)) * 100, 2) as attendance_percentage')
       )
-     join('students', 'attendance.student_id', 'students.id')
+      .join('students', 'attendance.student_id', 'students.id')
       .where('attendance.school_id', schoolId)
       .groupBy('students.id', 'students.student_id', 'students.first_name', 'students.last_name');
 
@@ -313,11 +330,289 @@ const generateAttendanceReport = async (req, res) => {
   }
 };
 
+/**
+ * Bulk create attendance records for a class
+ */
+const bulkCreateAttendance = async (req, res) => {
+  try {
+    const { class_id, date, attendance_records } = req.body;
+    const schoolId = req.user.school_id;
+    const recordedBy = req.user.id;
+
+    if (!class_id || !date || !attendance_records || !Array.isArray(attendance_records)) {
+      return res.status(400).json({
+        success: false,
+        error: 'class_id, date, and attendance_records array are required'
+      });
+    }
+
+    const results = [];
+    for (const record of attendance_records) {
+      const { student_id, status, remarks } = record;
+
+      // Check if attendance already exists
+      const existing = await db('attendance')
+        .where({
+          student_id,
+          class_id,
+          date,
+          school_id
+        })
+        .first();
+
+      if (existing) {
+        // Update existing record
+        const [updated] = await db('attendance')
+          .where({ id: existing.id })
+          .update({ status, remarks })
+          .returning('*');
+        results.push(updated);
+      } else {
+        // Create new record
+        const [created] = await db('attendance')
+          .insert({
+            id: db.raw('gen_random_uuid()'),
+            school_id,
+            student_id,
+            class_id,
+            date,
+            status,
+            remarks,
+            recorded_by: recordedBy
+          })
+          .returning('*');
+        results.push(created);
+
+        // Check attendance threshold for each student
+        await checkAttendanceThreshold(student_id, schoolId);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error('Error bulk creating attendance:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to bulk create attendance'
+    });
+  }
+};
+
+/**
+ * Get attendance statistics for admin
+ */
+const getAttendanceStatistics = async (req, res) => {
+  try {
+    const { start_date, end_date, class_id } = req.query;
+    const schoolId = req.user.school_id;
+
+    let query = db('attendance')
+      .select(
+        db.raw('COUNT(*) FILTER (WHERE status = \'present\') as present'),
+        db.raw('COUNT(*) FILTER (WHERE status = \'absent\') as absent'),
+        db.raw('COUNT(*) FILTER (WHERE status = \'late\') as late'),
+        db.raw('COUNT(*) FILTER (WHERE status = \'excused\') as excused'),
+        db.raw('COUNT(*) as total')
+      )
+      .where('school_id', schoolId);
+
+    if (start_date) {
+      query = query.where('date', '>=', start_date);
+    }
+    if (end_date) {
+      query = query.where('date', '<=', end_date);
+    }
+    if (class_id) {
+      query = query.where('class_id', class_id);
+    }
+
+    const stats = await query.first();
+
+    // Get monthly statistics
+    const monthlyStats = await db('attendance')
+      .select(
+        db.raw('TO_CHAR(date, \'YYYY-MM\') as month'),
+        db.raw('COUNT(*) FILTER (WHERE status = \'present\') as present'),
+        db.raw('COUNT(*) FILTER (WHERE status = \'absent\') as absent'),
+        db.raw('COUNT(*) FILTER (WHERE status = \'late\') as late'),
+        db.raw('COUNT(*) as total')
+      )
+      .where('school_id', schoolId)
+      .where('date', '>=', db.raw("NOW() - INTERVAL '6 months'"))
+      .groupBy(db.raw('TO_CHAR(date, \'YYYY-MM\')'))
+      .orderBy(db.raw('month'));
+
+    res.json({
+      success: true,
+      data: {
+        overall: stats,
+        monthly: monthlyStats
+      }
+    });
+  } catch (error) {
+    console.error('Error getting attendance statistics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get attendance statistics'
+    });
+  }
+};
+
+/**
+ * Get attendance calendar for a student
+ */
+const getStudentAttendanceCalendar = async (req, res) => {
+  try {
+    const { student_id } = req.params;
+    const { month, year } = req.query;
+    const schoolId = req.user.school_id;
+    const userRole = req.user.role;
+
+    // If user is a student, they can only see their own attendance
+    let targetStudentId = student_id;
+    if (userRole === 'student') {
+      const studentRecord = await db('students')
+        .where('user_id', req.user.id)
+        .where('school_id', schoolId)
+        .first();
+      
+      if (!studentRecord) {
+        return res.status(404).json({
+          success: false,
+          error: 'Student record not found'
+        });
+      }
+      
+      targetStudentId = studentRecord.id;
+      
+      if (student_id && student_id !== targetStudentId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied'
+        });
+      }
+    }
+
+    // If user is a parent, check if they're linked to this student
+    if (userRole === 'parent') {
+      const parent = await db('parents')
+        .where('user_id', req.user.id)
+        .where('school_id', schoolId)
+        .first();
+      
+      if (!parent) {
+        return res.status(404).json({
+          success: false,
+          error: 'Parent record not found'
+        });
+      }
+
+      const relationship = await db('parent_student_relationships')
+        .where('parent_id', parent.id)
+        .where('student_id', targetStudentId)
+        .first();
+      
+      if (!relationship) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied'
+        });
+      }
+    }
+
+    let query = db('attendance')
+      .select('date', 'status', 'remarks')
+      .where('student_id', targetStudentId)
+      .where('school_id', schoolId);
+
+    if (month && year) {
+      query = query.whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", `${year}-${month.padStart(2, '0')}`);
+    }
+
+    const attendance = await query.orderBy('date');
+
+    res.json({
+      success: true,
+      data: attendance
+    });
+  } catch (error) {
+    console.error('Error getting student attendance calendar:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get attendance calendar'
+    });
+  }
+};
+
+/**
+ * Check attendance threshold and notify parents if needed
+ */
+const checkAttendanceThreshold = async (studentId, schoolId) => {
+  try {
+    const threshold = 75; // 75% attendance threshold
+
+    // Get attendance for the last 30 days
+    const attendance = await db('attendance')
+      .select(
+        db.raw('COUNT(*) FILTER (WHERE status = \'present\') as present'),
+        db.raw('COUNT(*) FILTER (WHERE status = \'absent\') as absent'),
+        db.raw('COUNT(*) as total')
+      )
+      .where('student_id', studentId)
+      .where('school_id', schoolId)
+      .where('date', '>=', db.raw("NOW() - INTERVAL '30 days'"))
+      .first();
+
+    if (!attendance || attendance.total === 0) {
+      return;
+    }
+
+    const attendanceRate = (parseInt(attendance.present) / parseInt(attendance.total)) * 100;
+
+    if (attendanceRate < threshold) {
+      // Get student info
+      const student = await db('students')
+        .join('users', 'students.user_id', 'users.id')
+        .where('students.id', studentId)
+        .select('users.first_name', 'users.last_name')
+        .first();
+
+      // Get parents
+      const parents = await db('parent_student_relationships')
+        .join('parents', 'parent_student_relationships.parent_id', 'parents.id')
+        .join('users', 'parents.user_id', 'users.id')
+        .where('parent_student_relationships.student_id', studentId)
+        .select('users.id as user_id', 'users.first_name', 'users.last_name', 'users.email');
+
+      // Create notification for each parent
+      for (const parent of parents) {
+        await db('notifications').insert({
+          user_id: parent.user_id,
+          title: 'Low Attendance Alert',
+          message: `${student.first_name} ${student.last_name}'s attendance has dropped to ${attendanceRate.toFixed(1)}%. Please contact the school.`,
+          type: 'attendance',
+          reference_id: studentId,
+          reference_type: 'student',
+          is_read: false
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error checking attendance threshold:', error);
+  }
+};
+
 module.exports = {
   getClassAttendance,
   getStudentAttendance,
   createAttendance,
   updateAttendance,
   deleteAttendance,
-  generateAttendanceReport
+  generateAttendanceReport,
+  bulkCreateAttendance,
+  getAttendanceStatistics,
+  getStudentAttendanceCalendar
 };

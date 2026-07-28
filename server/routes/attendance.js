@@ -187,4 +187,112 @@ router.delete('/:id', authenticate, authorize(['super_admin', 'principal']), sch
  */
 router.get('/report', authenticate, schoolScope, attendanceController.generateAttendanceReport);
 
+/**
+ * @swagger
+ * /api/attendance/bulk:
+ *   post:
+ *     summary: Bulk create attendance records for a class
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - class_id
+ *               - date
+ *               - attendance_records
+ *             properties:
+ *               class_id:
+ *                 type: string
+ *                 format: uuid
+ *               date:
+ *                 type: string
+ *                 format: date
+ *               attendance_records:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     student_id:
+ *                       type: string
+ *                       format: uuid
+ *                     status:
+ *                       type: string
+ *                       enum: [present, absent, late, excused]
+ *                     remarks:
+ *                       type: string
+ *     responses:
+ *       201:
+ *         description: Attendance records created successfully
+ */
+router.post('/bulk', authenticate, authorize(['super_admin', 'principal', 'teacher']), attendanceController.bulkCreateAttendance);
+
+/**
+ * @swagger
+ * /api/attendance/statistics:
+ *   get:
+ *     summary: Get attendance statistics
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: start_date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for statistics
+ *       - in: query
+ *         name: end_date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for statistics
+ *       - in: query
+ *         name: class_id
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filter by class
+ *     responses:
+ *       200:
+ *         description: Attendance statistics retrieved successfully
+ */
+router.get('/statistics', authenticate, authorize(['super_admin', 'admin', 'principal']), schoolScope, attendanceController.getAttendanceStatistics);
+
+/**
+ * @swagger
+ * /api/attendance/calendar/:student_id:
+ *   get:
+ *     summary: Get attendance calendar for a student
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: student_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: string
+ *         description: Month (1-12)
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: string
+ *         description: Year (YYYY)
+ *     responses:
+ *       200:
+ *         description: Attendance calendar retrieved successfully
+ */
+router.get('/calendar/:student_id', authenticate, schoolScope, validationRules.uuidParam, validate, attendanceController.getStudentAttendanceCalendar);
+
 module.exports = router;
