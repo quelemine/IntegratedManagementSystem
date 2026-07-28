@@ -102,19 +102,19 @@ export default function Invoices() {
                 </div>
                 <div>
                   <p className="text-gray-500">Subtotal</p>
-                  <p className="font-medium">{selectedInvoice.subtotal?.toLocaleString()} {selectedInvoice.currency}</p>
+                  <p className="font-medium">{(selectedInvoice?.subtotal ?? 0).toLocaleString()} {selectedInvoice.currency}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Discount</p>
-                  <p className="font-medium">{selectedInvoice.discount_amount?.toLocaleString() || 0} {selectedInvoice.currency}</p>
+                  <p className="font-medium">{(selectedInvoice?.discount_amount ?? 0).toLocaleString()} {selectedInvoice.currency}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-gray-500">Total Amount</p>
-                  <p className="text-2xl font-bold">{selectedInvoice.total_amount?.toLocaleString()} {selectedInvoice.currency}</p>
+                  <p className="text-2xl font-bold">{(selectedInvoice?.total_amount ?? 0).toLocaleString()} {selectedInvoice.currency}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-gray-500">Balance Due</p>
-                  <p className="text-2xl font-bold text-blue-600">{selectedInvoice.balance_due?.toLocaleString()} {selectedInvoice.currency}</p>
+                  <p className="text-2xl font-bold text-blue-600">{(selectedInvoice?.balance_due ?? 0).toLocaleString()} {selectedInvoice.currency}</p>
                 </div>
               </div>
 
@@ -134,8 +134,8 @@ export default function Invoices() {
                       <tr key={item.id}>
                         <td className="px-4 py-2 border">{item.description}</td>
                         <td className="px-4 py-2 border">{item.quantity}</td>
-                        <td className="px-4 py-2 border">{item.unit_price?.toLocaleString()}</td>
-                        <td className="px-4 py-2 border">{item.amount?.toLocaleString()}</td>
+                        <td className="px-4 py-2 border">{(item?.unit_price ?? 0).toLocaleString()}</td>
+                        <td className="px-4 py-2 border">{(item?.amount ?? 0).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -159,7 +159,7 @@ export default function Invoices() {
                         <tr key={payment.id}>
                           <td className="px-4 py-2 border">{new Date(payment.payment_date).toLocaleDateString()}</td>
                           <td className="px-4 py-2 border capitalize">{payment.payment_method}</td>
-                          <td className="px-4 py-2 border">{payment.amount?.toLocaleString()}</td>
+                          <td className="px-4 py-2 border">{(payment?.amount ?? 0).toLocaleString()}</td>
                           <td className="px-4 py-2 border">{payment.payment_reference || 'N/A'}</td>
                         </tr>
                       ))}
@@ -199,7 +199,7 @@ export default function Invoices() {
                     </td>
                     <td className="px-4 py-3 border">{invoice.academic_year}</td>
                     <td className="px-4 py-3 border">
-                      {invoice.total_amount?.toLocaleString()} {invoice.currency}
+                      {(invoice?.total_amount ?? 0).toLocaleString()} {invoice.currency}
                     </td>
                     <td className="px-4 py-3 border">
                       {new Date(invoice.due_date).toLocaleDateString()}

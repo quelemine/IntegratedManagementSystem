@@ -148,7 +148,7 @@ function Dashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm opacity-80">Total Revenue</p>
-                      <p className="text-2xl font-bold">${analytics.totalRevenue.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">${(analytics?.totalRevenue ?? 0).toLocaleString()}</p>
                     </div>
                     <DollarSign className="h-8 w-8 opacity-80" />
                   </div>
@@ -157,7 +157,7 @@ function Dashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm opacity-80">Outstanding</p>
-                      <p className="text-2xl font-bold">${analytics.outstandingBalances.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">${(analytics?.outstandingBalances ?? 0).toLocaleString()}</p>
                     </div>
                     <DollarSign className="h-8 w-8 opacity-80" />
                   </div>
@@ -232,7 +232,7 @@ function Dashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm opacity-80">Fee Balance</p>
-                      <p className="text-2xl font-bold">${analytics.feeBalance.outstanding.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">${(analytics?.feeBalance?.outstanding ?? 0).toLocaleString()}</p>
                     </div>
                     <DollarSign className="h-8 w-8 opacity-80" />
                   </div>
@@ -259,7 +259,7 @@ function Dashboard() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Outstanding:</span>
-                          <span className="font-medium text-red-600">${child.outstandingBalance.toLocaleString()}</span>
+                          <span className="font-medium text-red-600">${(child?.outstandingBalance ?? 0).toLocaleString()}</span>
                         </div>
                       </div>
                     </div>

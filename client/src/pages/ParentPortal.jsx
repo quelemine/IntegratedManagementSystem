@@ -255,7 +255,7 @@ export default function ParentPortal() {
                       <div>
                         <p className="text-sm text-gray-600">Outstanding Balance</p>
                         <p className="text-3xl font-bold text-red-600">
-                          ${childData.fees.outstanding?.toLocaleString() || 0}
+                          ${(childData?.fees?.outstanding ?? 0).toLocaleString()}
                         </p>
                       </div>
                       {childData.fees.outstanding > 0 && (
@@ -390,19 +390,19 @@ export default function ParentPortal() {
                       <div className="bg-green-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-600">Total Fees</p>
                         <p className="text-2xl font-bold text-green-600">
-                          ${childData.fees.total?.toLocaleString() || 0}
+                          ${(childData?.fees?.total ?? 0).toLocaleString()}
                         </p>
                       </div>
                       <div className="bg-blue-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-600">Paid</p>
                         <p className="text-2xl font-bold text-blue-600">
-                          ${childData.fees.paid?.toLocaleString() || 0}
+                          ${(childData?.fees?.paid ?? 0).toLocaleString()}
                         </p>
                       </div>
                       <div className="bg-red-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-600">Outstanding</p>
                         <p className="text-2xl font-bold text-red-600">
-                          ${childData.fees.outstanding?.toLocaleString() || 0}
+                          ${(childData?.fees?.outstanding ?? 0).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -411,7 +411,7 @@ export default function ParentPortal() {
                         <div className="flex items-center gap-2">
                           <AlertCircle className="h-5 w-5 text-yellow-600" />
                           <p className="text-sm text-yellow-800">
-                            Payment Reminder: You have an outstanding balance of ${childData.fees.outstanding.toLocaleString()}
+                            Payment Reminder: You have an outstanding balance of ${(childData?.fees?.outstanding ?? 0).toLocaleString()}
                           </p>
                         </div>
                       </div>
@@ -437,7 +437,7 @@ export default function ParentPortal() {
                           {childData.payments.map((payment) => (
                             <tr key={payment.id} className="border-b hover:bg-gray-50">
                               <td className="py-3 px-4">{new Date(payment.payment_date).toLocaleDateString()}</td>
-                              <td className="py-3 px-4 font-medium">${payment.amount?.toLocaleString() || 0}</td>
+                              <td className="py-3 px-4 font-medium">${(payment?.amount ?? 0).toLocaleString()}</td>
                               <td className="py-3 px-4">{payment.payment_method || 'N/A'}</td>
                               <td className="py-3 px-4">
                                 <span className={`px-2 py-1 rounded text-sm ${

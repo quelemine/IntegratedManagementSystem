@@ -152,7 +152,7 @@ export default function Fees() {
                   <tr key={item.id}>
                     <td className="px-4 py-2 border">{item.name}</td>
                     <td className="px-4 py-2 border">{item.grade_name}</td>
-                    <td className="px-4 py-2 border">{item.amount.toLocaleString()}</td>
+                    <td className="px-4 py-2 border">{(item?.amount ?? 0).toLocaleString()}</td>
                     <td className="px-4 py-2 border">{item.currency}</td>
                     <td className="px-4 py-2 border">{item.academic_year}</td>
                     <td className="px-4 py-2 border">
@@ -186,7 +186,7 @@ export default function Fees() {
                   <tr key={item.id}>
                     <td className="px-4 py-2 border">{item.class_name}</td>
                     <td className="px-4 py-2 border">{item.fee_category_name}</td>
-                    <td className="px-4 py-2 border">{item.amount.toLocaleString()}</td>
+                    <td className="px-4 py-2 border">{(item?.amount ?? 0).toLocaleString()}</td>
                     <td className="px-4 py-2 border">{item.currency}</td>
                     <td className="px-4 py-2 border">{item.academic_year}</td>
                     <td className="px-4 py-2 border">
@@ -220,7 +220,7 @@ export default function Fees() {
                     <td className="px-4 py-2 border">{item.name}</td>
                     <td className="px-4 py-2 border capitalize">{item.discount_type}</td>
                     <td className="px-4 py-2 border">
-                      {item.discount_type === 'percentage' ? `${item.discount_value}%` : item.discount_value.toLocaleString()}
+                      {item.discount_type === 'percentage' ? `${item.discount_value}%` : (item?.discount_value ?? 0).toLocaleString()}
                     </td>
                     <td className="px-4 py-2 border capitalize">{item.applicable_to}</td>
                     <td className="px-4 py-2 border">
@@ -255,7 +255,7 @@ export default function Fees() {
                     <td className="px-4 py-2 border">{item.name}</td>
                     <td className="px-4 py-2 border capitalize">{item.scholarship_type}</td>
                     <td className="px-4 py-2 border">{item.coverage_percentage}%</td>
-                    <td className="px-4 py-2 border">{item.max_amount?.toLocaleString() || 'N/A'}</td>
+                    <td className="px-4 py-2 border">{(item?.max_amount ?? 0).toLocaleString()}</td>
                     <td className="px-4 py-2 border">{item.academic_year}</td>
                     <td className="px-4 py-2 border">
                       <span className={`px-2 py-1 rounded ${item.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

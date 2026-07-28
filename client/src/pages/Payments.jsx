@@ -140,7 +140,7 @@ export default function Payments() {
                   <td className="px-4 py-3 border">{payment.invoice_number || 'N/A'}</td>
                   <td className="px-4 py-3 border capitalize">{payment.payment_method}</td>
                   <td className="px-4 py-3 border">
-                    {payment.amount?.toLocaleString()} {payment.currency}
+                    {(payment?.amount ?? 0).toLocaleString()} {payment.currency}
                   </td>
                   <td className="px-4 py-3 border">{payment.payment_reference || 'N/A'}</td>
                   <td className="px-4 py-3 border">

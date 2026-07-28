@@ -78,7 +78,7 @@ export default function FinanceDashboard() {
               <div>
                 <p className="text-sm text-gray-600">Total Revenue</p>
                 <p className="text-2xl font-bold text-green-600">
-                  ${stats?.total_revenue?.toLocaleString() || 0}
+                  ${(stats?.total_revenue ?? 0).toLocaleString()}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-500" />
@@ -89,7 +89,7 @@ export default function FinanceDashboard() {
               <div>
                 <p className="text-sm text-gray-600">Outstanding Balance</p>
                 <p className="text-2xl font-bold text-red-600">
-                  ${stats?.outstanding_balance?.toLocaleString() || 0}
+                  ${(stats?.outstanding_balance ?? 0).toLocaleString()}
                 </p>
               </div>
               <AlertCircle className="h-8 w-8 text-red-500" />
@@ -100,7 +100,7 @@ export default function FinanceDashboard() {
               <div>
                 <p className="text-sm text-gray-600">Paid Fees</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  ${stats?.paid_fees?.toLocaleString() || 0}
+                  ${(stats?.paid_fees ?? 0).toLocaleString()}
                 </p>
               </div>
               <TrendingUp className="h-8 w-8 text-blue-500" />
@@ -111,7 +111,7 @@ export default function FinanceDashboard() {
               <div>
                 <p className="text-sm text-gray-600">This Month</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  ${stats?.monthly_income?.toLocaleString() || 0}
+                  ${(stats?.monthly_income ?? 0).toLocaleString()}
                 </p>
               </div>
               <Calendar className="h-8 w-8 text-purple-500" />
@@ -213,7 +213,7 @@ export default function FinanceDashboard() {
                       <tr key={invoice.id} className="border-b hover:bg-gray-50">
                         <td className="py-3 px-4 font-medium">{invoice.invoice_number}</td>
                         <td className="py-3 px-4">{invoice.student_first_name} {invoice.student_last_name}</td>
-                        <td className="py-3 px-4 font-medium">${invoice.total_amount?.toLocaleString()}</td>
+                        <td className="py-3 px-4 font-medium">${(invoice?.total_amount ?? 0).toLocaleString()}</td>
                         <td className="py-3 px-4">{new Date(invoice.due_date).toLocaleDateString()}</td>
                         <td className="py-3 px-4">
                           <span className="text-red-600 font-medium">{daysOverdue} days</span>
@@ -260,7 +260,7 @@ export default function FinanceDashboard() {
                     <tr key={payment.id} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4">{new Date(payment.payment_date).toLocaleDateString()}</td>
                       <td className="py-3 px-4">{payment.student_first_name} {payment.student_last_name}</td>
-                      <td className="py-3 px-4 font-medium">${payment.amount?.toLocaleString()}</td>
+                      <td className="py-3 px-4 font-medium">${(payment?.amount ?? 0).toLocaleString()}</td>
                       <td className="py-3 px-4">{payment.payment_method}</td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded text-sm ${

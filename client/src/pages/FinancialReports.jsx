@@ -71,15 +71,15 @@ export default function FinancialReports() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-gray-600">Total Billed</p>
-                <p className="text-2xl font-bold text-blue-600">{data?.total_billed?.toLocaleString() || 0} LRD</p>
+                <p className="text-2xl font-bold text-blue-600">{(data?.total_billed ?? 0).toLocaleString()} LRD</p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-gray-600">Total Collected</p>
-                <p className="text-2xl font-bold text-green-600">{data?.total_collected?.toLocaleString() || 0} LRD</p>
+                <p className="text-2xl font-bold text-green-600">{(data?.total_collected ?? 0).toLocaleString()} LRD</p>
               </div>
               <div className="bg-red-50 p-4 rounded-lg">
                 <p className="text-gray-600">Outstanding Balance</p>
-                <p className="text-2xl font-bold text-red-600">{data?.outstanding_balance?.toLocaleString() || 0} LRD</p>
+                <p className="text-2xl font-bold text-red-600">{(data?.outstanding_balance ?? 0).toLocaleString()} LRD</p>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg">
                 <p className="text-gray-600">Collection Rate</p>
@@ -103,7 +103,7 @@ export default function FinancialReports() {
                         <span className="font-medium capitalize">{method.payment_method}</span>
                         <span className="text-sm text-gray-600">{method.count} transactions</span>
                       </div>
-                      <p className="text-xl font-bold text-green-600">{method.total?.toLocaleString()} LRD</p>
+                      <p className="text-xl font-bold text-green-600">{(method?.total ?? 0).toLocaleString()} LRD</p>
                     </div>
                   ))}
                 </div>
@@ -143,7 +143,7 @@ export default function FinancialReports() {
                       <div key={index} className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-600 capitalize">{status.status}</p>
                         <p className="text-2xl font-bold">{status.count}</p>
-                        <p className="text-sm text-gray-600">{status.total?.toLocaleString()} LRD</p>
+                        <p className="text-sm text-gray-600">{(status?.total ?? 0).toLocaleString()} LRD</p>
                       </div>
                     );
                   })}
@@ -174,9 +174,9 @@ export default function FinancialReports() {
                       <td className="px-4 py-2 border">{student.first_name} {student.last_name}</td>
                       <td className="px-4 py-2 border">{student.student_number}</td>
                       <td className="px-4 py-2 border">{student.class_name}</td>
-                      <td className="px-4 py-2 border">{student.total_billed?.toLocaleString()} LRD</td>
-                      <td className="px-4 py-2 border">{student.total_paid?.toLocaleString()} LRD</td>
-                      <td className="px-4 py-2 border font-bold text-red-600">{student.balance_due?.toLocaleString()} LRD</td>
+                      <td className="px-4 py-2 border">{(student?.total_billed ?? 0).toLocaleString()} LRD</td>
+                      <td className="px-4 py-2 border">{(student?.total_paid ?? 0).toLocaleString()} LRD</td>
+                      <td className="px-4 py-2 border font-bold text-red-600">{(student?.balance_due ?? 0).toLocaleString()} LRD</td>
                     </tr>
                   ))
                 ) : (
@@ -208,7 +208,7 @@ export default function FinancialReports() {
                       <td className="px-4 py-2 border">{new Date(payment.payment_date).toLocaleDateString()}</td>
                       <td className="px-4 py-2 border capitalize">{payment.payment_method}</td>
                       <td className="px-4 py-2 border">{payment.transaction_count}</td>
-                      <td className="px-4 py-2 border">{payment.total_amount?.toLocaleString()} {payment.currency}</td>
+                      <td className="px-4 py-2 border">{(payment?.total_amount ?? 0).toLocaleString()} {payment.currency}</td>
                     </tr>
                   ))
                 ) : (
@@ -240,7 +240,7 @@ export default function FinancialReports() {
                       <td className="px-4 py-2 border">{revenue.year}</td>
                       <td className="px-4 py-2 border">{revenue.month}</td>
                       <td className="px-4 py-2 border">{revenue.transaction_count}</td>
-                      <td className="px-4 py-2 border">{revenue.total_amount?.toLocaleString()} {revenue.currency}</td>
+                      <td className="px-4 py-2 border">{(revenue?.total_amount ?? 0).toLocaleString()} {revenue.currency}</td>
                     </tr>
                   ))
                 ) : (
@@ -275,10 +275,10 @@ export default function FinancialReports() {
                       <td className="px-4 py-2 border capitalize">{fee.fee_type}</td>
                       <td className="px-4 py-2 border">{fee.academic_year}</td>
                       <td className="px-4 py-2 border">{fee.student_count}</td>
-                      <td className="px-4 py-2 border">{fee.total_amount?.toLocaleString()} {fee.currency}</td>
-                      <td className="px-4 py-2 border">{fee.pending_amount?.toLocaleString()}</td>
-                      <td className="px-4 py-2 border">{fee.partial_amount?.toLocaleString()}</td>
-                      <td className="px-4 py-2 border">{fee.paid_amount?.toLocaleString()}</td>
+                      <td className="px-4 py-2 border">{(fee?.total_amount ?? 0).toLocaleString()} {fee.currency}</td>
+                      <td className="px-4 py-2 border">{(fee?.pending_amount ?? 0).toLocaleString()}</td>
+                      <td className="px-4 py-2 border">{(fee?.partial_amount ?? 0).toLocaleString()}</td>
+                      <td className="px-4 py-2 border">{(fee?.paid_amount ?? 0).toLocaleString()}</td>
                     </tr>
                   ))
                 ) : (
@@ -314,7 +314,7 @@ export default function FinancialReports() {
                       <td className="px-4 py-2 border">{payment.student_first_name} {payment.student_last_name}</td>
                       <td className="px-4 py-2 border">{payment.invoice_number || 'N/A'}</td>
                       <td className="px-4 py-2 border capitalize">{payment.payment_method}</td>
-                      <td className="px-4 py-2 border">{payment.amount?.toLocaleString()} {payment.currency}</td>
+                      <td className="px-4 py-2 border">{(payment?.amount ?? 0).toLocaleString()} {payment.currency}</td>
                       <td className="px-4 py-2 border">{payment.payment_reference || 'N/A'}</td>
                       <td className="px-4 py-2 border">{payment.received_by_first_name} {payment.received_by_last_name}</td>
                     </tr>
