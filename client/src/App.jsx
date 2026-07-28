@@ -1,5 +1,6 @@
 // Main Application Component
 // Routes for all pages in the Integrated Management System
+import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
