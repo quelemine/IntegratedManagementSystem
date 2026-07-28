@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { logAction } = require('../middleware/audit');
 
 /**
  * Get all messages for the authenticated user (both sent and received)
@@ -124,6 +125,9 @@ const createMessage = async (req, res) => {
       is_read: false
     }).returning('*');
 
+    // Log message creation
+    await logAction(schoolId, sender_id, 'create', 'message', message.id, null, message, req.ip, req.headers['user-agent']);
+
     console.log('[Message] Message created with ID:', message.id);
     console.log('[Message] Message sender_id:', message.sender_id);
     console.log('[Message] Message receiver_id:', message.receiver_id);
@@ -211,6 +215,9 @@ const deleteMessage = async (req, res) => {
 
     await db('messages').where('id', id).del();
 
+    // Log message deletion
+    await logAction(schoolId, userId, 'delete', 'message', id, message, null, req.ip, req.headers['user-agent']);
+
     res.json({ success: true, message: 'Message deleted successfully' });
   } catch (error) {
     console.error('Delete message error:', error);
@@ -269,6 +276,9 @@ const createHelpDeskMessage = async (req, res) => {
       content,
       is_read: false
     }).returning('*');
+
+    // Log HelpDesk message creation
+    await logAction(schoolId, sender_id, 'create', 'helpdesk_message', message.id, null, message, req.ip, req.headers['user-agent']);
 
     console.log('[HelpDesk] Message created with ID:', message.id);
     console.log('[HelpDesk] Message sender_id:', message.sender_id);

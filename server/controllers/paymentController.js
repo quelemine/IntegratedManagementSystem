@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { logAction } = require('../middleware/audit');
 
 /**
  * Get all payments
@@ -303,6 +304,9 @@ const createPayment = async (req, res) => {
       })
       .returning('*');
 
+    // Log payment creation
+    await logAction(schoolId, req.user.id, 'create', 'payment', payment.id, null, payment, req.ip, req.headers['user-agent']);
+
     // Update invoice status
     let invoiceStatus = invoice.status;
     if (newTotalPaid >= invoiceTotal) {
@@ -347,6 +351,19 @@ const updatePayment = async (req, res) => {
     const { notes, status } = req.body;
     const schoolId = req.user.school_id;
 
+    // Get old values
+    const oldPayment = await db('payments')
+      .where('id', id)
+      .where('school_id', schoolId)
+      .first();
+
+    if (!oldPayment) {
+      return res.status(404).json({
+        success: false,
+        error: 'Payment not found'
+      });
+    }
+
     const [payment] = await db('payments')
       .where('id', id)
       .where('school_id', schoolId)
@@ -356,12 +373,8 @@ const updatePayment = async (req, res) => {
       })
       .returning('*');
 
-    if (!payment) {
-      return res.status(404).json({
-        success: false,
-        error: 'Payment not found'
-      });
-    }
+    // Log payment update
+    await logAction(schoolId, req.user.id, 'update', 'payment', id, oldPayment, payment, req.ip, req.headers['user-agent']);
 
     res.json({
       success: true,
@@ -411,6 +424,9 @@ const processRefund = async (req, res) => {
         status: 'refunded',
         notes: `Refunded: ${refund_amount}. ${notes || ''}`
       });
+
+    // Log refund action
+    await logAction(schoolId, req.user.id, 'refund', 'payment', id, payment, { refund_amount, notes }, req.ip, req.headers['user-agent']);
 
     // Update invoice status if needed
     if (payment.invoice_id) {

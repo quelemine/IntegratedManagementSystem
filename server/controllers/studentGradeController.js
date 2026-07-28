@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { logAction } = require('../middleware/audit');
 
 /**
  * Get student grades
@@ -151,6 +152,9 @@ const createStudentGrade = async (req, res) => {
       })
       .returning('*');
 
+    // Log grade creation
+    await logAction(schoolId, req.user.id, 'create', 'student_grade', grade.id, null, grade, req.ip, req.headers['user-agent']);
+
     res.status(201).json({
       success: true,
       data: grade
@@ -173,6 +177,18 @@ const updateStudentGrade = async (req, res) => {
     const { score, total_points, letter_grade, remarks } = req.body;
     const schoolId = req.user.school_id;
 
+    // Get old values
+    const oldGrade = await db('student_grades')
+      .where({ id, school_id: schoolId })
+      .first();
+
+    if (!oldGrade) {
+      return res.status(404).json({
+        success: false,
+        error: 'Student grade not found'
+      });
+    }
+
     const [grade] = await db('student_grades')
       .where({ id, school_id: schoolId })
       .update({
@@ -184,12 +200,8 @@ const updateStudentGrade = async (req, res) => {
       })
       .returning('*');
 
-    if (!grade) {
-      return res.status(404).json({
-        success: false,
-        error: 'Student grade not found'
-      });
-    }
+    // Log grade update
+    await logAction(schoolId, req.user.id, 'update', 'student_grade', id, oldGrade, grade, req.ip, req.headers['user-agent']);
 
     res.json({
       success: true,
@@ -212,16 +224,24 @@ const deleteStudentGrade = async (req, res) => {
     const { id } = req.params;
     const schoolId = req.user.school_id;
 
-    const deleted = await db('student_grades')
+    // Get old values
+    const oldGrade = await db('student_grades')
       .where({ id, school_id: schoolId })
-      .del();
+      .first();
 
-    if (!deleted) {
+    if (!oldGrade) {
       return res.status(404).json({
         success: false,
         error: 'Student grade not found'
       });
     }
+
+    const deleted = await db('student_grades')
+      .where({ id, school_id: schoolId })
+      .del();
+
+    // Log grade deletion
+    await logAction(schoolId, req.user.id, 'delete', 'student_grade', id, oldGrade, null, req.ip, req.headers['user-agent']);
 
     res.json({
       success: true,
