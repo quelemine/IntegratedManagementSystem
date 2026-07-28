@@ -270,6 +270,19 @@ function Dashboard() {
           </div>
         )}
 
+        {/* Student Only - Academic Progress */}
+        {user.role === 'student' && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">Academic Progress</h3>
+            <button
+              onClick={() => navigate('/academic-progress')}
+              className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 w-full"
+            >
+              View Academic Progress
+            </button>
+          </div>
+        )}
+
         {/* Admin/Principal Only - User & School Management */}
         {(user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
           <div className="bg-white p-6 rounded-lg shadow-md">
@@ -375,6 +388,32 @@ function Dashboard() {
                 Grade Reports
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Teacher Only - Grade Entry */}
+        {user.role === 'teacher' && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">Grade Entry</h3>
+            <button
+              onClick={() => navigate('/grade-entry')}
+              className="bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700 w-full"
+            >
+              Enter Student Grades
+            </button>
+          </div>
+        )}
+
+        {/* Admin/Principal Only - Academic Reports */}
+        {(user.role === 'admin' || user.role === 'super_admin' || user.role === 'principal') && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">Academic Reports</h3>
+            <button
+              onClick={() => navigate('/academic-reports')}
+              className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700 w-full"
+            >
+              View Academic Reports
+            </button>
           </div>
         )}
 

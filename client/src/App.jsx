@@ -33,6 +33,9 @@ import NotificationSettings from './pages/NotificationSettings'
 import AuditLogs from './pages/AuditLogs'
 import Documents from './pages/Documents'
 import Reports from './pages/Reports'
+import AcademicProgress from './pages/AcademicProgress'
+import TeacherGradeEntry from './pages/TeacherGradeEntry'
+import AdminAcademicReports from './pages/AdminAcademicReports'
 
 function App() {
   return (
@@ -71,6 +74,9 @@ function App() {
             <Route path="/audit-logs" element={<><AuditLogs /><HelpDesk /></>} />
             <Route path="/documents" element={<><Documents /><HelpDesk /></>} />
             <Route path="/reports" element={<><Reports /><HelpDesk /></>} />
+            <Route path="/academic-progress" element={<><AcademicProgress /><HelpDesk /></>} />
+            <Route path="/grade-entry" element={<><TeacherGradeEntry /><HelpDesk /></>} />
+            <Route path="/academic-reports" element={<><AdminAcademicReports /><HelpDesk /></>} />
           </Routes>
         </AuthProvider>
       </Router>
