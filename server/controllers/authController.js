@@ -160,9 +160,14 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log('[LOGIN] Attempt for email:', email);
+    console.log('[LOGIN] Environment:', process.env.NODE_ENV);
+    console.log('[LOGIN] JWT_SECRET configured:', !!process.env.JWT_SECRET);
+
     // Check if account is locked
     const locked = await isAccountLocked(email);
     if (locked) {
+      console.log('[LOGIN] Account locked for email:', email);
       await recordLoginAttempt(email, null, false, req.ip, req.headers['user-agent'], 'Account locked');
       return res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.' });
     }
@@ -170,19 +175,27 @@ const login = async (req, res) => {
     // Find user
     const user = await db('users').where('email', email).first();
     if (!user) {
+      console.log('[LOGIN] User not found for email:', email);
       await recordLoginAttempt(email, null, false, req.ip, req.headers['user-agent'], 'Invalid email');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    console.log('[LOGIN] User found:', user.id, user.email, 'is_active:', user.is_active);
+    console.log('[LOGIN] User has password hash:', !!user.password);
+
     // Check if user is active
     if (!user.is_active) {
+      console.log('[LOGIN] User account inactive:', user.id);
       await recordLoginAttempt(email, user.id, false, req.ip, req.headers['user-agent'], 'Account inactive');
       return res.status(401).json({ error: 'Account is inactive' });
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
+    console.log('[LOGIN] Password comparison result:', isValidPassword);
+    
     if (!isValidPassword) {
+      console.log('[LOGIN] Invalid password for user:', user.id);
       await recordLoginAttempt(email, user.id, false, req.ip, req.headers['user-agent'], 'Invalid password');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -200,6 +213,7 @@ const login = async (req, res) => {
     const usingDefaultPassword = isDefaultPassword(password);
 
     // Generate tokens
+    console.log('[LOGIN] Generating tokens for user:', user.id);
     const token = generateToken({ 
       id: user.id, 
       email: user.email, 
@@ -207,9 +221,13 @@ const login = async (req, res) => {
       school_id: user.school_id 
     });
     const refreshToken = generateRefreshToken({ id: user.id });
+    
+    console.log('[LOGIN] Token generated successfully:', !!token);
+    console.log('[LOGIN] Refresh token generated successfully:', !!refreshToken);
 
     // Get role name
     const role = await db('roles').where('id', user.role_id).first();
+    console.log('[LOGIN] User role:', role ? role.name : 'null');
 
     res.json({
       message: 'Login successful',
@@ -229,7 +247,8 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[LOGIN] Error:', error.message);
+    console.error('[LOGIN] Error stack:', error.stack);
     res.status(500).json({ error: 'Login failed' });
   }
 };
