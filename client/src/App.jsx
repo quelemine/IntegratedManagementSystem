@@ -40,6 +40,8 @@ import AcademicProgress from './pages/AcademicProgress'
 import TeacherGradeEntry from './pages/TeacherGradeEntry'
 import AdminAcademicReports from './pages/AdminAcademicReports'
 import ParentPortal from './pages/ParentPortal'
+import ParentDashboard from './pages/ParentDashboard'
+import ParentStudentRelationships from './pages/ParentStudentRelationships'
 import FinanceDashboard from './pages/FinanceDashboard'
 
 function App() {
@@ -83,6 +85,8 @@ function App() {
             <Route path="/grade-entry" element={<><TeacherGradeEntry /><HelpDesk /></>} />
             <Route path="/academic-reports" element={<><AdminAcademicReports /><HelpDesk /></>} />
             <Route path="/parent-portal" element={<><ParentPortal /><HelpDesk /></>} />
+            <Route path="/parent-dashboard" element={<><ParentDashboard /><HelpDesk /></>} />
+            <Route path="/parent-student-relationships" element={<><ParentStudentRelationships /><HelpDesk /></>} />
             <Route path="/finance-dashboard" element={<><FinanceDashboard /><HelpDesk /></>} />
           </Routes>
         </AuthProvider>

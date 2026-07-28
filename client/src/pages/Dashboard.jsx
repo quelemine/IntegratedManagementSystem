@@ -287,12 +287,20 @@ function Dashboard() {
         {user.role === 'parent' && (
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="text-lg font-semibold mb-4">Parent Portal</h3>
-            <button
-              onClick={() => navigate('/parent-portal')}
-              className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700 w-full"
-            >
-              View Children's Progress
-            </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onClick={() => navigate('/parent-dashboard')}
+                className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700"
+              >
+                View Children's Dashboard
+              </button>
+              <button
+                onClick={() => navigate('/parent-portal')}
+                className="bg-indigo-600 text-white px-4 py-3 rounded-md hover:bg-indigo-700"
+              >
+                View Children's Progress
+              </button>
+            </div>
           </div>
         )}
 
@@ -318,6 +326,12 @@ function Dashboard() {
                 className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700"
               >
                 Parents
+              </button>
+              <button
+                onClick={() => navigate('/parent-student-relationships')}
+                className="bg-pink-600 text-white px-4 py-3 rounded-md hover:bg-pink-700"
+              >
+                Parent-Student Links
               </button>
               <button
                 onClick={() => navigate('/classes')}
