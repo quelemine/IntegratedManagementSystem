@@ -39,6 +39,7 @@ function ParentDashboard() {
 
   const handleViewChild = (child) => {
     setSelectedChild(child)
+    navigate(`/parent/profile/${child.id}`)
   }
 
   const handleViewAttendance = (childId) => {
@@ -192,7 +193,7 @@ function ParentDashboard() {
                     </CardContent>
                   </Card>
 
-                  <Card className="cursor-pointer hover:shadow-lg">
+                  <Card className="cursor-pointer hover:shadow-lg" onClick={() => navigate(`/parent/announcements/${selectedChild.id}`)}>
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         <Bell className="h-5 w-5 mr-2 text-red-600" />
@@ -204,7 +205,7 @@ function ParentDashboard() {
                     </CardContent>
                   </Card>
 
-                  <Card className="cursor-pointer hover:shadow-lg">
+                  <Card className="cursor-pointer hover:shadow-lg" onClick={() => navigate(`/parent/profile/${selectedChild.id}`)}>
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         <User className="h-5 w-5 mr-2 text-gray-600" />

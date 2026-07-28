@@ -42,6 +42,12 @@ import AdminAcademicReports from './pages/AdminAcademicReports'
 import ParentPortal from './pages/ParentPortal'
 import ParentDashboard from './pages/ParentDashboard'
 import ParentStudentRelationships from './pages/ParentStudentRelationships'
+import ParentChildProfile from './pages/ParentChildProfile'
+import ParentChildAttendance from './pages/ParentChildAttendance'
+import ParentChildGrades from './pages/ParentChildGrades'
+import ParentChildAssignments from './pages/ParentChildAssignments'
+import ParentChildFees from './pages/ParentChildFees'
+import ParentChildAnnouncements from './pages/ParentChildAnnouncements'
 import FinanceDashboard from './pages/FinanceDashboard'
 
 function App() {
@@ -87,6 +93,12 @@ function App() {
             <Route path="/parent-portal" element={<><ParentPortal /><HelpDesk /></>} />
             <Route path="/parent-dashboard" element={<><ParentDashboard /><HelpDesk /></>} />
             <Route path="/parent-student-relationships" element={<><ParentStudentRelationships /><HelpDesk /></>} />
+            <Route path="/parent/profile/:childId" element={<><ParentChildProfile /><HelpDesk /></>} />
+            <Route path="/parent/attendance/:childId" element={<><ParentChildAttendance /><HelpDesk /></>} />
+            <Route path="/parent/grades/:childId" element={<><ParentChildGrades /><HelpDesk /></>} />
+            <Route path="/parent/assignments/:childId" element={<><ParentChildAssignments /><HelpDesk /></>} />
+            <Route path="/parent/fees/:childId" element={<><ParentChildFees /><HelpDesk /></>} />
+            <Route path="/parent/announcements/:childId" element={<><ParentChildAnnouncements /><HelpDesk /></>} />
             <Route path="/finance-dashboard" element={<><FinanceDashboard /><HelpDesk /></>} />
           </Routes>
         </AuthProvider>
