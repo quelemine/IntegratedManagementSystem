@@ -3,6 +3,7 @@ import axios from '../utils/axios'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Users, DollarSign, TrendingUp, BookOpen, CheckCircle, Clock } from 'lucide-react'
+import NotificationDropdown from '../components/NotificationDropdown'
 
 function Dashboard() {
   const [school, setSchool] = useState(null)
@@ -71,17 +72,7 @@ function Dashboard() {
             </div>
             <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4 w-full sm:w-auto">
               <span className="text-gray-700 text-sm sm:text-base">{user.first_name} {user.last_name}</span>
-              <button
-                onClick={() => navigate('/notifications')}
-                className="relative px-3 py-2 sm:px-4 bg-gray-100 rounded-md hover:bg-gray-200 text-sm sm:text-base"
-              >
-                Notifications
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
+              <NotificationDropdown />
               <button
                 onClick={logout}
                 className="bg-red-600 text-white px-3 py-2 sm:px-4 rounded-md hover:bg-red-700 text-sm sm:text-base"

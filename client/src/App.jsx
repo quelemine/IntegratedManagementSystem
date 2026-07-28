@@ -29,6 +29,7 @@ import MessageView from './pages/MessageView'
 import ComposeMessage from './pages/ComposeMessage'
 import Announcements from './pages/Announcements'
 import Notifications from './pages/Notifications'
+import NotificationSettings from './pages/NotificationSettings'
 import AuditLogs from './pages/AuditLogs'
 import Documents from './pages/Documents'
 import Reports from './pages/Reports'
@@ -66,6 +67,7 @@ function App() {
             <Route path="/messages/compose" element={<><ComposeMessage /><HelpDesk /></>} />
             <Route path="/announcements" element={<><Announcements /><HelpDesk /></>} />
             <Route path="/notifications" element={<><Notifications /><HelpDesk /></>} />
+            <Route path="/notification-settings" element={<><NotificationSettings /><HelpDesk /></>} />
             <Route path="/audit-logs" element={<><AuditLogs /><HelpDesk /></>} />
             <Route path="/documents" element={<><Documents /><HelpDesk /></>} />
             <Route path="/reports" element={<><Reports /><HelpDesk /></>} />

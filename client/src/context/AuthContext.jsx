@@ -29,6 +29,17 @@ export const AuthProvider = ({ children }) => {
     setLoading(false)
   }, [])
 
+  // Poll for unread count every 30 seconds
+  useEffect(() => {
+    if (!user) return
+
+    const interval = setInterval(() => {
+      fetchUnreadCount()
+    }, 30000) // 30 seconds
+
+    return () => clearInterval(interval)
+  }, [user])
+
   const fetchUnreadCount = async () => {
     try {
       const response = await axios.get('/notifications/unread-count')
@@ -90,6 +101,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     unreadCount,
+    fetchUnreadCount,
     login,
     logout,
     hasRole,
