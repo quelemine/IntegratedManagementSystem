@@ -3,6 +3,7 @@ const { logAction } = require('../middleware/audit');
 const { generateIDCardPDF, generateCardNumber } = require('../utils/idCardGenerator');
 const path = require('path');
 const fs = require('fs');
+const csv = require('csv-parser');
 
 /**
  * Get all students (school-scoped)
@@ -473,6 +474,110 @@ const downloadIDCard = async (req, res) => {
   }
 };
 
+/**
+ * Bulk import students from CSV
+ */
+const bulkImportStudents = async (req, res) => {
+  try {
+    const { students } = req.body;
+    const schoolId = req.user.school_id;
+    const userId = req.user.id;
+
+    if (!students || !Array.isArray(students) || students.length === 0) {
+      return res.status(400).json({ success: false, error: 'No students data provided' });
+    }
+
+    console.log('[BULK IMPORT] Importing', students.length, 'students');
+
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    for (const studentData of students) {
+      try {
+        // Validate required fields
+        if (!studentData.first_name || !studentData.last_name || !studentData.email) {
+          results.failed++;
+          results.errors.push({
+            student: studentData,
+            error: 'Missing required fields (first_name, last_name, email)'
+          });
+          continue;
+        }
+
+        // Check if user already exists
+        const existingUser = await db('users').where('email', studentData.email).first();
+        if (existingUser) {
+          results.failed++;
+          results.errors.push({
+            student: studentData,
+            error: 'User with this email already exists'
+          });
+          continue;
+        }
+
+        // Create user
+        const [user] = await db('users').insert({
+          id: db.raw('gen_random_uuid()'),
+          first_name: studentData.first_name,
+          last_name: studentData.last_name,
+          email: studentData.email,
+          phone: studentData.phone || null,
+          role: 'student',
+          school_id: schoolId,
+          created_at: db.raw('NOW()'),
+          updated_at: db.raw('NOW()')
+        }).returning('id');
+
+        // Create student
+        await db('students').insert({
+          id: db.raw('gen_random_uuid()'),
+          user_id: user.id,
+          school_id: schoolId,
+          student_id: studentData.student_id || null,
+          class_id: studentData.class_id || null,
+          grade_id: studentData.grade_id || null,
+          division_id: studentData.division_id || null,
+          date_of_birth: studentData.date_of_birth || null,
+          gender: studentData.gender || null,
+          address: studentData.address || null,
+          phone: studentData.phone || null,
+          emergency_contact_name: studentData.emergency_contact_name || null,
+          emergency_contact_phone: studentData.emergency_contact_phone || null,
+          medical_info: studentData.medical_info || null,
+          status: 'active',
+          created_at: db.raw('NOW()'),
+          updated_at: db.raw('NOW()')
+        });
+
+        results.success++;
+      } catch (error) {
+        console.error('[BULK IMPORT] Error importing student:', error);
+        results.failed++;
+        results.errors.push({
+          student: studentData,
+          error: error.message
+        });
+      }
+    }
+
+    // Log bulk import action
+    await logAction(schoolId, userId, 'create', 'student_bulk_import', null, null, 
+      { total: students.length, success: results.success, failed: results.failed }, 
+      req.ip, req.headers['user-agent']);
+
+    res.json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error('[BULK IMPORT] Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to bulk import students' });
+  }
+};
+
 module.exports = {
   getStudents,
   getStudentById,
@@ -481,5 +586,6 @@ module.exports = {
   deleteStudent,
   getMyProfile,
   generateIDCard,
-  downloadIDCard
+  downloadIDCard,
+  bulkImportStudents
 };

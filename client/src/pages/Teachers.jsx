@@ -8,7 +8,7 @@ import { Select, SelectItem } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
-import { Plus, Edit, Trash2, Search } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, Upload } from 'lucide-react'
 
 function Teachers() {
   const [teachers, setTeachers] = useState([])
@@ -17,6 +17,10 @@ function Teachers() {
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [importFile, setImportFile] = useState(null)
+  const [importing, setImporting] = useState(false)
+  const [importResults, setImportResults] = useState(null)
   const [editingTeacher, setEditingTeacher] = useState(null)
   const [formData, setFormData] = useState({
     user_id: '',
@@ -118,6 +122,51 @@ function Teachers() {
     }
   }
 
+  const handleImport = async () => {
+    if (!importFile) {
+      setError('Please select a CSV file')
+      return
+    }
+
+    setImporting(true)
+    setError('')
+    setImportResults(null)
+
+    try {
+      const text = await importFile.text()
+      const lines = text.split('\n').filter(line => line.trim())
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+      
+      const teachers = []
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim())
+        const teacher = {}
+        headers.forEach((header, index) => {
+          teacher[header] = values[index] || ''
+        })
+        teachers.push(teacher)
+      }
+
+      console.log('[IMPORT] Sending teachers:', teachers)
+      const response = await axios.post('/teachers/bulk-import', { teachers })
+      console.log('[IMPORT] Response:', response.data)
+      
+      setImportResults(response.data.data)
+      
+      // Refresh teachers list
+      const teachersRes = await axios.get('/teachers')
+      setTeachers(teachersRes.data.data)
+      
+      setIsImportModalOpen(false)
+      setImportFile(null)
+    } catch (err) {
+      console.error('[IMPORT] Error:', err)
+      setError(err.response?.data?.error || 'Failed to import teachers')
+    } finally {
+      setImporting(false)
+    }
+  }
+
   const filteredTeachers = teachers.filter(teacher =>
     teacher.employee_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     `${teacher.first_name} ${teacher.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
@@ -142,11 +191,18 @@ function Teachers() {
             </div>
             <div className="flex items-center justify-between w-full sm:w-auto gap-3">
               <h1 className="text-lg sm:text-xl font-bold">Teachers</h1>
-              <Button onClick={handleCreate} className="text-sm sm:text-base">
-                <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Add Teacher</span>
-                <span className="sm:hidden">Add</span>
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setIsImportModalOpen(true)} variant="outline" className="text-sm sm:text-base">
+                  <Upload className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Import</span>
+                  <span className="sm:hidden">Import</span>
+                </Button>
+                <Button onClick={handleCreate} className="text-sm sm:text-base">
+                  <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Teacher</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -324,6 +380,58 @@ function Teachers() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Import Teachers from CSV"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="csvFile">CSV File</Label>
+            <Input
+              id="csvFile"
+              type="file"
+              accept=".csv"
+              onChange={(e) => setImportFile(e.target.files[0])}
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              CSV should have headers: first_name, last_name, email, phone, employee_id, subject_specialization, qualification, experience_years, joining_date, address, emergency_contact_name, emergency_contact_phone
+            </p>
+          </div>
+
+          {importResults && (
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="font-medium mb-2">Import Results:</p>
+              <p className="text-green-600">Success: {importResults.success}</p>
+              <p className="text-red-600">Failed: {importResults.failed}</p>
+              {importResults.errors.length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-sm text-gray-600">View errors</summary>
+                  <div className="mt-2 max-h-40 overflow-y-auto">
+                    {importResults.errors.map((err, idx) => (
+                      <div key={idx} className="text-xs text-red-600 mb-1">
+                        {err.error}: {JSON.stringify(err.teacher)}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => setIsImportModalOpen(false)} disabled={importing}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleImport} disabled={importing}>
+              {importing ? 'Importing...' : 'Import'}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

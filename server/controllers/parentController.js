@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { logAction } = require('../middleware/audit');
 
 /**
  * Get all parents (users with parent role and parent records)
@@ -260,11 +261,123 @@ const getMyChildren = async (req, res) => {
   }
 };
 
+/**
+ * Bulk import parents from CSV
+ */
+const bulkImportParents = async (req, res) => {
+  try {
+    const { parents } = req.body;
+    const schoolId = req.user.school_id;
+    const userId = req.user.id;
+
+    if (!parents || !Array.isArray(parents) || parents.length === 0) {
+      return res.status(400).json({ success: false, error: 'No parents data provided' });
+    }
+
+    console.log('[BULK IMPORT] Importing', parents.length, 'parents');
+
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    for (const parentData of parents) {
+      try {
+        // Validate required fields
+        if (!parentData.first_name || !parentData.last_name || !parentData.email) {
+          results.failed++;
+          results.errors.push({
+            parent: parentData,
+            error: 'Missing required fields (first_name, last_name, email)'
+          });
+          continue;
+        }
+
+        // Check if user already exists
+        const existingUser = await db('users').where('email', parentData.email).first();
+        if (existingUser) {
+          results.failed++;
+          results.errors.push({
+            parent: parentData,
+            error: 'User with this email already exists'
+          });
+          continue;
+        }
+
+        // Get parent role
+        const parentRole = await db('roles').where('name', 'parent').first();
+        if (!parentRole) {
+          results.failed++;
+          results.errors.push({
+            parent: parentData,
+            error: 'Parent role not found'
+          });
+          continue;
+        }
+
+        // Create user
+        const [user] = await db('users').insert({
+          id: db.raw('gen_random_uuid()'),
+          first_name: parentData.first_name,
+          last_name: parentData.last_name,
+          email: parentData.email,
+          phone: parentData.phone || null,
+          role_id: parentRole.id,
+          role: 'parent',
+          school_id: schoolId,
+          is_active: true,
+          created_at: db.raw('NOW()'),
+          updated_at: db.raw('NOW()')
+        }).returning('id');
+
+        // Create parent
+        await db('parents').insert({
+          id: db.raw('gen_random_uuid()'),
+          user_id: user.id,
+          school_id: schoolId,
+          relationship: parentData.relationship || null,
+          occupation: parentData.occupation || null,
+          employer: parentData.employer || null,
+          phone: parentData.phone || null,
+          address: parentData.address || null,
+          status: 'active',
+          created_at: db.raw('NOW()'),
+          updated_at: db.raw('NOW()')
+        });
+
+        results.success++;
+      } catch (error) {
+        console.error('[BULK IMPORT] Error importing parent:', error);
+        results.failed++;
+        results.errors.push({
+          parent: parentData,
+          error: error.message
+        });
+      }
+    }
+
+    // Log bulk import action
+    await logAction(schoolId, userId, 'create', 'parent_bulk_import', null, null, 
+      { total: parents.length, success: results.success, failed: results.failed }, 
+      req.ip, req.headers['user-agent']);
+
+    res.json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error('[BULK IMPORT] Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to bulk import parents' });
+  }
+};
+
 module.exports = {
   getParents,
   getParentById,
   createParent,
   updateParent,
   deleteParent,
-  getMyChildren
+  getMyChildren,
+  bulkImportParents
 };

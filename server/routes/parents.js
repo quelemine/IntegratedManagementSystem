@@ -149,4 +149,29 @@ router.delete('/:id', authenticate, schoolScope, validationRules.uuidParam, vali
  */
 router.get('/my-children', authenticate, parentController.getMyChildren);
 
+/**
+ * @swagger
+ * /api/parents/bulk-import:
+ *   post:
+ *     summary: Bulk import parents
+ *     tags: [Parents]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               parents:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       200:
+ *         description: Parents imported successfully
+ */
+router.post('/bulk-import', authenticate, authorize(['super_admin', 'principal']), parentController.bulkImportParents);
+
 module.exports = router;

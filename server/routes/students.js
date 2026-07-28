@@ -9,6 +9,7 @@ const { auditLog } = require('../middleware/audit');
 router.get('/', authenticate, schoolScope, validationRules.pagination, validate, studentController.getStudents);
 router.get('/my-profile', authenticate, authorize(['student']), studentController.getMyProfile);
 router.post('/', authenticate, authorize(['super_admin', 'principal', 'teacher']), auditLog('create'), studentController.createStudent);
+router.post('/bulk-import', authenticate, authorize(['super_admin', 'principal', 'teacher']), studentController.bulkImportStudents);
 router.get('/:id', authenticate, schoolScope, validationRules.uuidParam, validate, studentController.getStudentById);
 router.put('/:id', authenticate, authorize(['super_admin', 'principal', 'teacher']), schoolScope, validationRules.uuidParam, validate, auditLog('update'), studentController.updateStudent);
 router.delete('/:id', authenticate, authorize(['super_admin']), schoolScope, validationRules.uuidParam, validate, auditLog('delete'), studentController.deleteStudent);
