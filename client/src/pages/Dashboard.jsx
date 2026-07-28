@@ -283,6 +283,19 @@ function Dashboard() {
           </div>
         )}
 
+        {/* Parent Only - Parent Portal */}
+        {user.role === 'parent' && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">Parent Portal</h3>
+            <button
+              onClick={() => navigate('/parent-portal')}
+              className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700 w-full"
+            >
+              View Children's Progress
+            </button>
+          </div>
+        )}
+
         {/* Admin/Principal Only - User & School Management */}
         {(user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
           <div className="bg-white p-6 rounded-lg shadow-md">

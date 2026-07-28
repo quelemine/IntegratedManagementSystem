@@ -18,6 +18,23 @@ const getStudentProgress = async (req, res) => {
       }
     }
 
+    // Parents can only view their children's progress
+    if (userRole === 'parent') {
+      const parent = await db('parents').where('user_id', userId).first();
+      if (!parent) {
+        return res.status(403).json({ success: false, error: 'Access denied' });
+      }
+
+      const childRelation = await db('parent_student_relationships')
+        .where('parent_id', parent.id)
+        .where('student_id', studentId)
+        .first();
+
+      if (!childRelation) {
+        return res.status(403).json({ success: false, error: 'Access denied - not your child' });
+      }
+    }
+
     let query = db('academic_progress')
       .where('student_id', studentId);
 
@@ -48,6 +65,23 @@ const getSubjectPerformance = async (req, res) => {
       const student = await db('students').where('user_id', userId).first();
       if (!student || student.id !== studentId) {
         return res.status(403).json({ success: false, error: 'Access denied' });
+      }
+    }
+
+    // Parents can only view their children's performance
+    if (userRole === 'parent') {
+      const parent = await db('parents').where('user_id', userId).first();
+      if (!parent) {
+        return res.status(403).json({ success: false, error: 'Access denied' });
+      }
+
+      const childRelation = await db('parent_student_relationships')
+        .where('parent_id', parent.id)
+        .where('student_id', studentId)
+        .first();
+
+      if (!childRelation) {
+        return res.status(403).json({ success: false, error: 'Access denied - not your child' });
       }
     }
 
@@ -444,6 +478,23 @@ const getAcademicHistory = async (req, res) => {
       const student = await db('students').where('user_id', userId).first();
       if (!student || student.id !== studentId) {
         return res.status(403).json({ success: false, error: 'Access denied' });
+      }
+    }
+
+    // Parents can only view their children's history
+    if (userRole === 'parent') {
+      const parent = await db('parents').where('user_id', userId).first();
+      if (!parent) {
+        return res.status(403).json({ success: false, error: 'Access denied' });
+      }
+
+      const childRelation = await db('parent_student_relationships')
+        .where('parent_id', parent.id)
+        .where('student_id', studentId)
+        .first();
+
+      if (!childRelation) {
+        return res.status(403).json({ success: false, error: 'Access denied - not your child' });
       }
     }
 

@@ -215,10 +215,56 @@ const deleteParent = async (req, res) => {
   }
 };
 
+/**
+ * Get parent's children (for logged-in parent)
+ */
+const getMyChildren = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const parent = await db('parents').where('user_id', userId).first();
+    if (!parent) {
+      return res.status(404).json({
+        success: false,
+        error: 'Parent record not found'
+      });
+    }
+
+    const children = await db('parent_student_relationships')
+      .join('students', 'parent_student_relationships.student_id', 'students.id')
+      .join('users', 'students.user_id', 'users.id')
+      .leftJoin('student_classes', 'students.id', 'student_classes.student_id')
+      .leftJoin('classes', 'student_classes.class_id', 'classes.id')
+      .select(
+        'students.id',
+        'students.student_id',
+        'users.first_name',
+        'users.last_name',
+        'users.email',
+        'classes.name as class_name',
+        'classes.division_name'
+      )
+      .where('parent_student_relationships.parent_id', parent.id)
+      .where('students.is_active', true);
+
+    res.json({
+      success: true,
+      data: children
+    });
+  } catch (error) {
+    console.error('Error fetching children:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch children'
+    });
+  }
+};
+
 module.exports = {
   getParents,
   getParentById,
   createParent,
   updateParent,
-  deleteParent
+  deleteParent,
+  getMyChildren
 };

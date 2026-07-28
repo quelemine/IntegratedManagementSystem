@@ -36,6 +36,29 @@ const getStudentGrades = async (req, res) => {
       }
     }
 
+    // If user is a parent, they can only see their children's grades
+    if (userRole === 'parent') {
+      const parent = await db('parents').where('user_id', req.user.id).first();
+      if (!parent) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied'
+        });
+      }
+
+      const childRelation = await db('parent_student_relationships')
+        .where('parent_id', parent.id)
+        .where('student_id', student_id)
+        .first();
+
+      if (!childRelation) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied - not your child'
+        });
+      }
+    }
+
     let query = db('student_grades')
       .select(
         'student_grades.id',

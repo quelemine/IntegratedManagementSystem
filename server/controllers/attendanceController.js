@@ -88,6 +88,29 @@ const getStudentAttendance = async (req, res) => {
       }
     }
 
+    // If user is a parent, they can only see their children's attendance
+    if (userRole === 'parent') {
+      const parent = await db('parents').where('user_id', req.user.id).first();
+      if (!parent) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied'
+        });
+      }
+
+      const childRelation = await db('parent_student_relationships')
+        .where('parent_id', parent.id)
+        .where('student_id', student_id)
+        .first();
+
+      if (!childRelation) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied - not your child'
+        });
+      }
+    }
+
     const attendance = await db('attendance')
       .select(
         'attendance.id',

@@ -135,4 +135,18 @@ router.put('/:id', authenticate, schoolScope, validationRules.uuidParam, validat
  */
 router.delete('/:id', authenticate, schoolScope, validationRules.uuidParam, validate, parentController.deleteParent);
 
+/**
+ * @swagger
+ * /api/parents/my-children:
+ *   get:
+ *     summary: Get logged-in parent's children
+ *     tags: [Parents]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Children retrieved successfully
+ */
+router.get('/my-children', authenticate, parentController.getMyChildren);
+
 module.exports = router;
