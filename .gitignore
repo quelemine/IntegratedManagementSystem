@@ -13,6 +13,8 @@ client/public/uploads/
 
 # Build
 client/build/
+client/dist/
+dist/
 
 # Logs
 *.log
