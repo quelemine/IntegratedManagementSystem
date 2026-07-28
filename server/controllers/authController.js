@@ -165,15 +165,30 @@ const login = async (req, res) => {
     console.log('[LOGIN] JWT_SECRET configured:', !!process.env.JWT_SECRET);
 
     // Check if account is locked
-    const locked = await isAccountLocked(email);
-    if (locked) {
-      console.log('[LOGIN] Account locked for email:', email);
-      await recordLoginAttempt(email, null, false, req.ip, req.headers['user-agent'], 'Account locked');
-      return res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.' });
+    try {
+      const locked = await isAccountLocked(email);
+      if (locked) {
+        console.log('[LOGIN] Account locked for email:', email);
+        await recordLoginAttempt(email, null, false, req.ip, req.headers['user-agent'], 'Account locked');
+        return res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.' });
+      }
+    } catch (lockError) {
+      console.error('[LOGIN] Error checking account lock:', lockError.message);
+      // Continue with login attempt if lock check fails
     }
 
     // Find user
-    const user = await db('users').where('email', email).first();
+    let user;
+    try {
+      console.log('[LOGIN] Querying database for user with email:', email);
+      user = await db('users').where('email', email).first();
+      console.log('[LOGIN] Database query completed, user found:', !!user);
+    } catch (dbError) {
+      console.error('[LOGIN] Database query error:', dbError.message);
+      console.error('[LOGIN] Database error stack:', dbError.stack);
+      return res.status(500).json({ error: 'Database error during login' });
+    }
+
     if (!user) {
       console.log('[LOGIN] User not found for email:', email);
       await recordLoginAttempt(email, null, false, req.ip, req.headers['user-agent'], 'Invalid email');
@@ -191,8 +206,16 @@ const login = async (req, res) => {
     }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    console.log('[LOGIN] Password comparison result:', isValidPassword);
+    let isValidPassword;
+    try {
+      console.log('[LOGIN] Starting password comparison for user:', user.id);
+      isValidPassword = await bcrypt.compare(password, user.password);
+      console.log('[LOGIN] Password comparison result:', isValidPassword);
+    } catch (bcryptError) {
+      console.error('[LOGIN] Bcrypt comparison error:', bcryptError.message);
+      console.error('[LOGIN] Bcrypt error stack:', bcryptError.stack);
+      return res.status(500).json({ error: 'Password verification error' });
+    }
     
     if (!isValidPassword) {
       console.log('[LOGIN] Invalid password for user:', user.id);
@@ -201,33 +224,67 @@ const login = async (req, res) => {
     }
 
     // Record successful login
-    await recordLoginAttempt(email, user.id, true, req.ip, req.headers['user-agent']);
+    try {
+      await recordLoginAttempt(email, user.id, true, req.ip, req.headers['user-agent']);
+    } catch (recordError) {
+      console.error('[LOGIN] Error recording login attempt:', recordError.message);
+      // Continue with login even if recording fails
+    }
 
     // Update last login
-    await db('users').where('id', user.id).update({ last_login: new Date() });
+    try {
+      await db('users').where('id', user.id).update({ last_login: new Date() });
+    } catch (updateError) {
+      console.error('[LOGIN] Error updating last login:', updateError.message);
+      // Continue with login even if update fails
+    }
 
     // Log login
-    await logAction(user.school_id, user.id, 'login', 'user', user.id, null, null, req.ip, req.headers['user-agent']);
+    try {
+      await logAction(user.school_id, user.id, 'login', 'user', user.id, null, null, req.ip, req.headers['user-agent']);
+    } catch (auditError) {
+      console.error('[LOGIN] Error logging audit action:', auditError.message);
+      // Continue with login even if audit logging fails
+    }
 
     // Check if user is using default password
     const usingDefaultPassword = isDefaultPassword(password);
 
     // Generate tokens
     console.log('[LOGIN] Generating tokens for user:', user.id);
-    const token = generateToken({ 
-      id: user.id, 
-      email: user.email, 
-      role_id: user.role_id, 
-      school_id: user.school_id 
-    });
-    const refreshToken = generateRefreshToken({ id: user.id });
     
-    console.log('[LOGIN] Token generated successfully:', !!token);
-    console.log('[LOGIN] Refresh token generated successfully:', !!refreshToken);
+    if (!process.env.JWT_SECRET) {
+      console.error('[LOGIN] JWT_SECRET is not configured!');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    let token, refreshToken;
+    try {
+      token = generateToken({ 
+        id: user.id, 
+        email: user.email, 
+        role_id: user.role_id, 
+        school_id: user.school_id 
+      });
+      refreshToken = generateRefreshToken({ id: user.id });
+      console.log('[LOGIN] Token generated successfully:', !!token);
+      console.log('[LOGIN] Refresh token generated successfully:', !!refreshToken);
+    } catch (tokenError) {
+      console.error('[LOGIN] Token generation error:', tokenError.message);
+      console.error('[LOGIN] Token error stack:', tokenError.stack);
+      return res.status(500).json({ error: 'Token generation error' });
+    }
 
     // Get role name
-    const role = await db('roles').where('id', user.role_id).first();
-    console.log('[LOGIN] User role:', role ? role.name : 'null');
+    let role;
+    try {
+      role = await db('roles').where('id', user.role_id).first();
+      console.log('[LOGIN] User role:', role ? role.name : 'null');
+    } catch (roleError) {
+      console.error('[LOGIN] Error fetching role:', roleError.message);
+      // Continue with login even if role fetch fails
+      role = null;
+    }
 
     res.json({
       message: 'Login successful',
@@ -247,7 +304,8 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[LOGIN] Error:', error.message);
+    console.error('[LOGIN] Unhandled error:', error.message);
+    console.error('[LOGIN] Error name:', error.name);
     console.error('[LOGIN] Error stack:', error.stack);
     res.status(500).json({ error: 'Login failed' });
   }
