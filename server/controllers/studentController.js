@@ -475,6 +475,14 @@ const downloadIDCard = async (req, res) => {
 };
 
 /**
+ * Validate email format
+ */
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+/**
  * Bulk import students from CSV
  */
 const bulkImportStudents = async (req, res) => {
@@ -495,25 +503,56 @@ const bulkImportStudents = async (req, res) => {
       errors: []
     };
 
-    for (const studentData of students) {
+    // Track duplicate emails across the import
+    const emailSet = new Set();
+
+    for (let i = 0; i < students.length; i++) {
+      const studentData = students[i];
+      const rowNumber = i + 2; // Row 1 is headers, so data starts at row 2
+
       try {
         // Validate required fields
         if (!studentData.first_name || !studentData.last_name || !studentData.email) {
           results.failed++;
           results.errors.push({
+            row: rowNumber,
             student: studentData,
             error: 'Missing required fields (first_name, last_name, email)'
           });
           continue;
         }
 
-        // Check if user already exists
+        // Validate email format
+        if (!isValidEmail(studentData.email)) {
+          results.failed++;
+          results.errors.push({
+            row: rowNumber,
+            student: studentData,
+            error: 'Invalid email format'
+          });
+          continue;
+        }
+
+        // Check for duplicate emails within the import
+        if (emailSet.has(studentData.email)) {
+          results.failed++;
+          results.errors.push({
+            row: rowNumber,
+            student: studentData,
+            error: 'Duplicate email within the import file'
+          });
+          continue;
+        }
+        emailSet.add(studentData.email);
+
+        // Check if user already exists in database
         const existingUser = await db('users').where('email', studentData.email).first();
         if (existingUser) {
           results.failed++;
           results.errors.push({
+            row: rowNumber,
             student: studentData,
-            error: 'User with this email already exists'
+            error: 'User with this email already exists in the system'
           });
           continue;
         }
@@ -554,19 +593,38 @@ const bulkImportStudents = async (req, res) => {
 
         results.success++;
       } catch (error) {
-        console.error('[BULK IMPORT] Error importing student:', error);
+        console.error('[BULK IMPORT] Error importing student at row', rowNumber, ':', error);
         results.failed++;
         results.errors.push({
+          row: rowNumber,
           student: studentData,
           error: error.message
         });
       }
     }
 
-    // Log bulk import action
+    // Log bulk import action to audit logs
     await logAction(schoolId, userId, 'create', 'student_bulk_import', null, null, 
       { total: students.length, success: results.success, failed: results.failed }, 
       req.ip, req.headers['user-agent']);
+
+    // Log to bulk_import_logs table
+    await db('bulk_import_logs').insert({
+      school_id: schoolId,
+      user_id: userId,
+      import_type: 'student',
+      total_records: students.length,
+      successful_records: results.success,
+      failed_records: results.failed,
+      error_summary: {
+        total_errors: results.errors.length,
+        error_types: results.errors.reduce((acc, err) => {
+          acc[err.error] = (acc[err.error] || 0) + 1;
+          return acc;
+        }, {})
+      },
+      error_details: results.errors
+    });
 
     res.json({
       success: true,

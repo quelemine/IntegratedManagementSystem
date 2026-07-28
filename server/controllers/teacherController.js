@@ -2,6 +2,14 @@ const db = require('../config/database');
 const { logAction } = require('../middleware/audit');
 
 /**
+ * Validate email format
+ */
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+/**
  * Get all teachers (users with teacher role and teacher records)
  */
 const getTeachers = async (req, res) => {
@@ -58,25 +66,56 @@ const bulkImportTeachers = async (req, res) => {
       errors: []
     };
 
-    for (const teacherData of teachers) {
+    // Track duplicate emails across the import
+    const emailSet = new Set();
+
+    for (let i = 0; i < teachers.length; i++) {
+      const teacherData = teachers[i];
+      const rowNumber = i + 2; // Row 1 is headers, so data starts at row 2
+
       try {
         // Validate required fields
         if (!teacherData.first_name || !teacherData.last_name || !teacherData.email) {
           results.failed++;
           results.errors.push({
+            row: rowNumber,
             teacher: teacherData,
             error: 'Missing required fields (first_name, last_name, email)'
           });
           continue;
         }
 
-        // Check if user already exists
+        // Validate email format
+        if (!isValidEmail(teacherData.email)) {
+          results.failed++;
+          results.errors.push({
+            row: rowNumber,
+            teacher: teacherData,
+            error: 'Invalid email format'
+          });
+          continue;
+        }
+
+        // Check for duplicate emails within the import
+        if (emailSet.has(teacherData.email)) {
+          results.failed++;
+          results.errors.push({
+            row: rowNumber,
+            teacher: teacherData,
+            error: 'Duplicate email within the import file'
+          });
+          continue;
+        }
+        emailSet.add(teacherData.email);
+
+        // Check if user already exists in database
         const existingUser = await db('users').where('email', teacherData.email).first();
         if (existingUser) {
           results.failed++;
           results.errors.push({
+            row: rowNumber,
             teacher: teacherData,
-            error: 'User with this email already exists'
+            error: 'User with this email already exists in the system'
           });
           continue;
         }
@@ -86,6 +125,7 @@ const bulkImportTeachers = async (req, res) => {
         if (!teacherRole) {
           results.failed++;
           results.errors.push({
+            row: rowNumber,
             teacher: teacherData,
             error: 'Teacher role not found'
           });
@@ -128,19 +168,38 @@ const bulkImportTeachers = async (req, res) => {
 
         results.success++;
       } catch (error) {
-        console.error('[BULK IMPORT] Error importing teacher:', error);
+        console.error('[BULK IMPORT] Error importing teacher at row', rowNumber, ':', error);
         results.failed++;
         results.errors.push({
+          row: rowNumber,
           teacher: teacherData,
           error: error.message
         });
       }
     }
 
-    // Log bulk import action
+    // Log bulk import action to audit logs
     await logAction(schoolId, userId, 'create', 'teacher_bulk_import', null, null, 
       { total: teachers.length, success: results.success, failed: results.failed }, 
       req.ip, req.headers['user-agent']);
+
+    // Log to bulk_import_logs table
+    await db('bulk_import_logs').insert({
+      school_id: schoolId,
+      user_id: userId,
+      import_type: 'teacher',
+      total_records: teachers.length,
+      successful_records: results.success,
+      failed_records: results.failed,
+      error_summary: {
+        total_errors: results.errors.length,
+        error_types: results.errors.reduce((acc, err) => {
+          acc[err.error] = (acc[err.error] || 0) + 1;
+          return acc;
+        }, {})
+      },
+      error_details: results.errors
+    });
 
     res.json({
       success: true,

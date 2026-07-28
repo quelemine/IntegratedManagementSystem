@@ -22,6 +22,7 @@ function Students() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [importFile, setImportFile] = useState(null)
   const [importing, setImporting] = useState(false)
+  const [importProgress, setImportProgress] = useState(0)
   const [importResults, setImportResults] = useState(null)
   const [editingStudent, setEditingStudent] = useState(null)
   const [formData, setFormData] = useState({
@@ -134,9 +135,34 @@ function Students() {
     }
   }
 
+  const downloadTemplate = () => {
+    const headers = ['first_name', 'last_name', 'email', 'phone', 'student_id', 'class_id', 'grade_id', 'division_id', 'date_of_birth', 'gender', 'address', 'emergency_contact_name', 'emergency_contact_phone', 'medical_info'];
+    const csvContent = headers.join(',') + '\nJohn,Doe,john.doe@example.com,+1234567890,STU001,,,1,2000-01-15,male,123 Main St,Jane Doe,+1234567891,No allergies';
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'students_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleImport = async () => {
     if (!importFile) {
       setError('Please select a CSV file')
+      return
+    }
+
+    // Validate file type
+    if (importFile.type !== 'text/csv' && !importFile.name.endsWith('.csv')) {
+      setError('Please select a CSV file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (importFile.size > maxSize) {
+      setError('File size exceeds 5MB limit')
       return
     }
 
@@ -157,6 +183,10 @@ function Students() {
           student[header] = values[index] || ''
         })
         students.push(student)
+        
+        // Update progress
+        const progress = Math.round((i / (lines.length - 1)) * 100)
+        setImportProgress(progress)
       }
 
       console.log('[IMPORT] Sending students:', students)
@@ -171,11 +201,13 @@ function Students() {
       
       setIsImportModalOpen(false)
       setImportFile(null)
+      setImportProgress(0)
     } catch (err) {
       console.error('[IMPORT] Error:', err)
       setError(err.response?.data?.error || 'Failed to import students')
     } finally {
       setImporting(false)
+      setImportProgress(0)
     }
   }
 
@@ -204,6 +236,9 @@ function Students() {
             <div className="flex items-center justify-between w-full sm:w-auto gap-3">
               <h1 className="text-lg sm:text-xl font-bold">Students</h1>
               <div className="flex gap-2">
+                <Button onClick={downloadTemplate} variant="outline" className="text-sm sm:text-base">
+                  Download Template
+                </Button>
                 <Button onClick={() => setIsImportModalOpen(true)} variant="outline" className="text-sm sm:text-base">
                   <Upload className="h-4 w-4 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Import</span>
@@ -449,6 +484,21 @@ function Students() {
             </p>
           </div>
 
+          {importing && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-blue-700">Processing...</span>
+                <span className="text-sm text-blue-700">{importProgress}%</span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${importProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+
           {importResults && (
             <div className="bg-gray-50 p-4 rounded-lg">
               <p className="font-medium mb-2">Import Results:</p>
@@ -460,7 +510,7 @@ function Students() {
                   <div className="mt-2 max-h-40 overflow-y-auto">
                     {importResults.errors.map((err, idx) => (
                       <div key={idx} className="text-xs text-red-600 mb-1">
-                        {err.error}: {JSON.stringify(err.student)}
+                        Row {err.row}: {err.error}
                       </div>
                     ))}
                   </div>

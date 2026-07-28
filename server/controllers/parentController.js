@@ -2,6 +2,14 @@ const db = require('../config/database');
 const { logAction } = require('../middleware/audit');
 
 /**
+ * Validate email format
+ */
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+/**
  * Get all parents (users with parent role and parent records)
  */
 const getParents = async (req, res) => {
@@ -282,25 +290,56 @@ const bulkImportParents = async (req, res) => {
       errors: []
     };
 
-    for (const parentData of parents) {
+    // Track duplicate emails across the import
+    const emailSet = new Set();
+
+    for (let i = 0; i < parents.length; i++) {
+      const parentData = parents[i];
+      const rowNumber = i + 2; // Row 1 is headers, so data starts at row 2
+
       try {
         // Validate required fields
         if (!parentData.first_name || !parentData.last_name || !parentData.email) {
           results.failed++;
           results.errors.push({
+            row: rowNumber,
             parent: parentData,
             error: 'Missing required fields (first_name, last_name, email)'
           });
           continue;
         }
 
-        // Check if user already exists
+        // Validate email format
+        if (!isValidEmail(parentData.email)) {
+          results.failed++;
+          results.errors.push({
+            row: rowNumber,
+            parent: parentData,
+            error: 'Invalid email format'
+          });
+          continue;
+        }
+
+        // Check for duplicate emails within the import
+        if (emailSet.has(parentData.email)) {
+          results.failed++;
+          results.errors.push({
+            row: rowNumber,
+            parent: parentData,
+            error: 'Duplicate email within the import file'
+          });
+          continue;
+        }
+        emailSet.add(parentData.email);
+
+        // Check if user already exists in database
         const existingUser = await db('users').where('email', parentData.email).first();
         if (existingUser) {
           results.failed++;
           results.errors.push({
+            row: rowNumber,
             parent: parentData,
-            error: 'User with this email already exists'
+            error: 'User with this email already exists in the system'
           });
           continue;
         }
@@ -310,6 +349,7 @@ const bulkImportParents = async (req, res) => {
         if (!parentRole) {
           results.failed++;
           results.errors.push({
+            row: rowNumber,
             parent: parentData,
             error: 'Parent role not found'
           });
@@ -348,19 +388,38 @@ const bulkImportParents = async (req, res) => {
 
         results.success++;
       } catch (error) {
-        console.error('[BULK IMPORT] Error importing parent:', error);
+        console.error('[BULK IMPORT] Error importing parent at row', rowNumber, ':', error);
         results.failed++;
         results.errors.push({
+          row: rowNumber,
           parent: parentData,
           error: error.message
         });
       }
     }
 
-    // Log bulk import action
+    // Log bulk import action to audit logs
     await logAction(schoolId, userId, 'create', 'parent_bulk_import', null, null, 
       { total: parents.length, success: results.success, failed: results.failed }, 
       req.ip, req.headers['user-agent']);
+
+    // Log to bulk_import_logs table
+    await db('bulk_import_logs').insert({
+      school_id: schoolId,
+      user_id: userId,
+      import_type: 'parent',
+      total_records: parents.length,
+      successful_records: results.success,
+      failed_records: results.failed,
+      error_summary: {
+        total_errors: results.errors.length,
+        error_types: results.errors.reduce((acc, err) => {
+          acc[err.error] = (acc[err.error] || 0) + 1;
+          return acc;
+        }, {})
+      },
+      error_details: results.errors
+    });
 
     res.json({
       success: true,
