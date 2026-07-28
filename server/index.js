@@ -9,6 +9,14 @@ const swaggerSpec = require('./config/swagger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { logRequest } = require('./utils/logger');
 
+// Validate NODE_ENV in production
+if (process.env.NODE_ENV === 'production') {
+  console.log('✓ Running in PRODUCTION mode');
+} else {
+  console.log('⚠ Running in DEVELOPMENT mode');
+  console.log('  For production deployment, set NODE_ENV=production in your environment variables');
+}
+
 const app = express();
 
 // Trust proxy for Render (required for rate limiting)
