@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axios';
@@ -38,11 +38,16 @@ export default function AuditLogs() {
         end_date: endDate || undefined
       };
       
+      console.log('[AUDIT LOGS] Fetching logs with params:', params);
       const response = await axios.get('/audit/logs', { params });
-      setLogs(response.data.data);
-      setTotalPages(response.data.pagination.totalPages);
+      console.log('[AUDIT LOGS] Logs response:', response.data);
+      setLogs(response.data.data || []);
+      setTotalPages(response.data.pagination?.totalPages || 1);
     } catch (error) {
-      console.error('Error fetching audit logs:', error);
+      console.error('[AUDIT LOGS] Error fetching audit logs:', error);
+      console.error('[AUDIT LOGS] Error response:', error.response?.data);
+      setLogs([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -50,10 +55,14 @@ export default function AuditLogs() {
 
   const fetchStats = async () => {
     try {
+      console.log('[AUDIT LOGS] Fetching stats');
       const response = await axios.get('/audit/stats');
-      setStats(response.data.data);
+      console.log('[AUDIT LOGS] Stats response:', response.data);
+      setStats(response.data.data || null);
     } catch (error) {
-      console.error('Error fetching audit stats:', error);
+      console.error('[AUDIT LOGS] Error fetching audit stats:', error);
+      console.error('[AUDIT LOGS] Error response:', error.response?.data);
+      setStats(null);
     }
   };
 
@@ -126,7 +135,7 @@ export default function AuditLogs() {
                 <div>
                   <p className="text-sm text-gray-600">Total Actions (30 days)</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {stats.actionCounts.reduce((sum, item) => sum + parseInt(item.count), 0)}
+                    {(stats?.actionCounts || []).reduce((sum, item) => sum + parseInt(item?.count || 0), 0)}
                   </p>
                 </div>
               </div>
@@ -136,7 +145,7 @@ export default function AuditLogs() {
                 <User className="h-8 w-8 text-green-600 mr-3" />
                 <div>
                   <p className="text-sm text-gray-600">Active Users (30 days)</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.topUsers.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{(stats?.topUsers || []).length}</p>
                 </div>
               </div>
             </div>
@@ -145,7 +154,7 @@ export default function AuditLogs() {
                 <Filter className="h-8 w-8 text-purple-600 mr-3" />
                 <div>
                   <p className="text-sm text-gray-600">Entity Types</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.entityCounts.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{(stats?.entityCounts || []).length}</p>
                 </div>
               </div>
             </div>
@@ -263,11 +272,11 @@ export default function AuditLogs() {
                     <React.Fragment key={log.id}>
                       <tr className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(log.timestamp).toLocaleString()}
+                          {log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {log.first_name} {log.last_name}
-                          <div className="text-xs text-gray-500">{log.email}</div>
+                          {log.first_name || ''} {log.last_name || ''}
+                          <div className="text-xs text-gray-500">{log.email || ''}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getActionColor(log.action)}`}>
@@ -297,7 +306,13 @@ export default function AuditLogs() {
                                 <div>
                                   <p className="text-xs font-medium text-gray-500 mb-1">Old Values:</p>
                                   <pre className="text-xs bg-white p-2 rounded border overflow-x-auto">
-                                    {JSON.stringify(JSON.parse(log.old_values), null, 2)}
+                                    {(() => {
+                                      try {
+                                        return JSON.stringify(JSON.parse(log.old_values), null, 2);
+                                      } catch (e) {
+                                        return log.old_values;
+                                      }
+                                    })()}
                                   </pre>
                                 </div>
                               )}
@@ -305,7 +320,13 @@ export default function AuditLogs() {
                                 <div>
                                   <p className="text-xs font-medium text-gray-500 mb-1">New Values:</p>
                                   <pre className="text-xs bg-white p-2 rounded border overflow-x-auto">
-                                    {JSON.stringify(JSON.parse(log.new_values), null, 2)}
+                                    {(() => {
+                                      try {
+                                        return JSON.stringify(JSON.parse(log.new_values), null, 2);
+                                      } catch (e) {
+                                        return log.new_values;
+                                      }
+                                    })()}
                                   </pre>
                                 </div>
                               )}
