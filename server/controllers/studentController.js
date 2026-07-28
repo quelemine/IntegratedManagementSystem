@@ -293,6 +293,18 @@ const deleteStudent = async (req, res) => {
  */
 const getMyProfile = async (req, res) => {
   try {
+    console.log('[STUDENT PROFILE] Get my profile request');
+    console.log('[STUDENT PROFILE] User ID:', req.user?.id);
+    console.log('[STUDENT PROFILE] User role_id:', req.user?.role_id);
+    console.log('[STUDENT PROFILE] School ID:', req.user?.school_id);
+
+    if (!req.user?.id) {
+      console.error('[STUDENT PROFILE] Missing user ID');
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    console.log('[STUDENT PROFILE] Querying student record for user_id:', req.user.id);
+    
     const student = await db('students')
       .select('students.*')
       .select('users.first_name', 'users.last_name', 'users.email', 'users.phone', 'users.profile_image')
@@ -306,13 +318,20 @@ const getMyProfile = async (req, res) => {
       .where('students.user_id', req.user.id)
       .first();
 
+    console.log('[STUDENT PROFILE] Student record found:', !!student);
+    
     if (!student) {
+      console.error('[STUDENT PROFILE] Student profile not found for user_id:', req.user.id);
       return res.status(404).json({ error: 'Student profile not found' });
     }
 
+    console.log('[STUDENT PROFILE] Student ID:', student.id);
+    console.log('[STUDENT PROFILE] Student school_id:', student.school_id);
+
     res.json({ data: student });
   } catch (error) {
-    console.error('Get my profile error:', error);
+    console.error('[STUDENT PROFILE] Error:', error.message);
+    console.error('[STUDENT PROFILE] Error stack:', error.stack);
     res.status(500).json({ error: 'Failed to get student profile' });
   }
 };
