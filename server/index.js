@@ -171,6 +171,7 @@ app.use('/api/audit', require('./routes/audit'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/report-cards', require('./routes/reportCards'));
+app.use('/api/email-communication', require('./routes/emailCommunication'));
 
 // 404 handler
 app.use(notFoundHandler);

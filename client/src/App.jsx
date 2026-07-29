@@ -52,6 +52,7 @@ import FinanceDashboard from './pages/FinanceDashboard'
 import PrincipalDashboard from './pages/PrincipalDashboard'
 import VicePrincipalDashboard from './pages/VicePrincipalDashboard'
 import ReportCard from './pages/ReportCard'
+import EmailCommunication from './pages/EmailCommunication'
 
 function App() {
   return (
@@ -106,6 +107,7 @@ function App() {
             <Route path="/principal-dashboard" element={<><PrincipalDashboard /><HelpDesk /></>} />
             <Route path="/vice-principal-dashboard" element={<><VicePrincipalDashboard /><HelpDesk /></>} />
             <Route path="/report-card/:studentId" element={<><ReportCard /><HelpDesk /></>} />
+            <Route path="/email-communication" element={<><EmailCommunication /><HelpDesk /></>} />
           </Routes>
         </AuthProvider>
       </Router>

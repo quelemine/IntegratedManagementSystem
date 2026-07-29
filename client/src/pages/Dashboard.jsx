@@ -397,6 +397,27 @@ function Dashboard() {
           </div>
         )}
 
+        {/* Admin/Principal Only - Communication */}
+        {(user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold mb-4">Communication</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onClick={() => navigate('/email-communication')}
+                className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700"
+              >
+                Send Emails to Students
+              </button>
+              <button
+                onClick={() => navigate('/announcements')}
+                className="bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700"
+              >
+                Announcements
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Teacher Only - Academic Management */}
         {(user.role === 'teacher' || user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
           <div className="bg-white p-6 rounded-lg shadow-md">
