@@ -58,6 +58,10 @@ function ParentDashboard() {
     navigate(`/parent/fees/${childId}`)
   }
 
+  const handleViewReportCard = (childId) => {
+    navigate(`/report-card/${childId}`)
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
@@ -190,6 +194,18 @@ function ParentDashboard() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-gray-600">View fee invoices and payments</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="cursor-pointer hover:shadow-lg" onClick={() => handleViewReportCard(selectedChild.id)}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <FileText className="h-5 w-5 mr-2 text-emerald-600" />
+                        Report Card
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600">View academic report card</p>
                     </CardContent>
                   </Card>
 

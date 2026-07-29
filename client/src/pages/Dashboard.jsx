@@ -274,12 +274,24 @@ function Dashboard() {
         {user.role === 'student' && (
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="text-lg font-semibold mb-4">Academic Progress</h3>
-            <button
-              onClick={() => navigate('/academic-progress')}
-              className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 w-full"
-            >
-              View Academic Progress
-            </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onClick={() => navigate('/academic-progress')}
+                className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700"
+              >
+                View Academic Progress
+              </button>
+              <button
+                onClick={() => {
+                  // Get student ID from user data
+                  const studentId = user.id; // This might need adjustment based on actual user object structure
+                  navigate(`/report-card/${studentId}`);
+                }}
+                className="bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700"
+              >
+                View Report Card
+              </button>
+            </div>
           </div>
         )}
 

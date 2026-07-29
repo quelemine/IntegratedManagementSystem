@@ -51,6 +51,7 @@ import ParentChildAnnouncements from './pages/ParentChildAnnouncements'
 import FinanceDashboard from './pages/FinanceDashboard'
 import PrincipalDashboard from './pages/PrincipalDashboard'
 import VicePrincipalDashboard from './pages/VicePrincipalDashboard'
+import ReportCard from './pages/ReportCard'
 
 function App() {
   return (
@@ -104,6 +105,7 @@ function App() {
             <Route path="/finance-dashboard" element={<><FinanceDashboard /><HelpDesk /></>} />
             <Route path="/principal-dashboard" element={<><PrincipalDashboard /><HelpDesk /></>} />
             <Route path="/vice-principal-dashboard" element={<><VicePrincipalDashboard /><HelpDesk /></>} />
+            <Route path="/report-card/:studentId" element={<><ReportCard /><HelpDesk /></>} />
           </Routes>
         </AuthProvider>
       </Router>
