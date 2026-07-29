@@ -115,7 +115,7 @@ const createAnnouncement = async (req, res) => {
 
     const actualRole = user ? user.role_name : userRole;
 
-    if (actualRole !== 'admin' && actualRole !== 'principal') {
+    if (actualRole !== 'super_admin' && actualRole !== 'admin' && actualRole !== 'principal') {
       return res.status(403).json({ success: false, error: 'You are not authorized to create announcements' });
     }
 
@@ -201,7 +201,7 @@ const updateAnnouncement = async (req, res) => {
 
     const actualRole = user ? user.role_name : userRole;
 
-    if (actualRole !== 'admin' && actualRole !== 'principal') {
+    if (actualRole !== 'super_admin' && actualRole !== 'admin' && actualRole !== 'principal') {
       return res.status(403).json({ success: false, error: 'You are not authorized to update announcements' });
     }
 
@@ -251,7 +251,7 @@ const deleteAnnouncement = async (req, res) => {
 
     const actualRole = user ? user.role_name : userRole;
 
-    if (actualRole !== 'admin' && actualRole !== 'principal') {
+    if (actualRole !== 'super_admin' && actualRole !== 'admin' && actualRole !== 'principal') {
       return res.status(403).json({ success: false, error: 'You are not authorized to delete announcements' });
     }
 
