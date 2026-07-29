@@ -7,6 +7,7 @@ const { validate, validationRules } = require('../middleware/validation');
 const { auditLog } = require('../middleware/audit');
 
 router.get('/', authenticate, schoolScope, validationRules.pagination, validate, studentController.getStudents);
+router.get('/me', authenticate, authorize(['student']), studentController.getMyProfile);
 router.get('/my-profile', authenticate, authorize(['student']), studentController.getMyProfile);
 router.post('/', authenticate, authorize(['super_admin', 'principal', 'teacher']), auditLog('create'), studentController.createStudent);
 router.post('/bulk-import', authenticate, authorize(['super_admin', 'principal', 'teacher']), studentController.bulkImportStudents);
