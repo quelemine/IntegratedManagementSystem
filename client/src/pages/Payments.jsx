@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
-import { Plus, Search, Download, Printer, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, Download, Printer, ChevronLeft, ChevronRight, ArrowUpDown, Edit, Trash2 } from 'lucide-react';
 
 export default function Payments() {
   const { token } = useAuth();
@@ -16,6 +16,7 @@ export default function Payments() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [paymentType, setPaymentType] = useState('system'); // 'system' or 'external'
+  const [editingPayment, setEditingPayment] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPayments, setSelectedPayments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,7 +29,8 @@ export default function Payments() {
     payment_method: 'cash',
     transaction_reference: '',
     receipt_number: '',
-    notes: ''
+    notes: '',
+    status: 'completed'
   });
 
   useEffect(() => {
@@ -50,21 +52,53 @@ export default function Payments() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/payments', formData);
+      if (editingPayment) {
+        await axios.put(`/payments/${editingPayment.id}`, formData);
+        setPayments(payments.map(p => p.id === editingPayment.id ? { ...p, ...formData } : p));
+      } else {
+        await axios.post('/payments', formData);
+      }
       setShowModal(false);
       setPaymentType('system');
+      setEditingPayment(null);
       setFormData({
         invoice_id: '',
         amount_paid: '',
         payment_method: 'cash',
         transaction_reference: '',
         receipt_number: '',
-        notes: ''
+        notes: '',
+        status: 'completed'
       });
       fetchPayments();
     } catch (error) {
-      console.error('Error creating payment:', error);
-      alert('Failed to create payment');
+      console.error('Error saving payment:', error);
+      alert('Failed to save payment');
+    }
+  };
+
+  const handleEdit = (payment) => {
+    setEditingPayment(payment);
+    setFormData({
+      invoice_id: payment.invoice_id || '',
+      amount_paid: payment.amount || '',
+      payment_method: payment.payment_method || 'cash',
+      transaction_reference: payment.payment_reference || '',
+      receipt_number: payment.receipt_number || '',
+      notes: payment.notes || '',
+      status: payment.status || 'completed'
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this payment?')) return;
+    try {
+      await axios.delete(`/payments/${id}`);
+      setPayments(payments.filter(p => p.id !== id));
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      alert('Failed to delete payment');
     }
   };
 
@@ -312,6 +346,7 @@ export default function Payments() {
                 <TableHead>Reference</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Received By</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -340,6 +375,16 @@ export default function Payments() {
                   </TableCell>
                   <TableCell>
                     {payment.received_by_first_name} {payment.received_by_last_name}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(payment)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(payment.id)}>
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

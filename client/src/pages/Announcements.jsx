@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axios';
+import { Edit, Trash2 } from 'lucide-react';
 
 export default function Announcements() {
   const { user } = useAuth();
@@ -9,6 +10,7 @@ export default function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -36,13 +38,40 @@ export default function Announcements() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/announcements', formData);
+      if (editingAnnouncement) {
+        await axios.put(`/announcements/${editingAnnouncement.id}`, formData);
+        setAnnouncements(announcements.map(a => a.id === editingAnnouncement.id ? { ...a, ...formData } : a));
+      } else {
+        await axios.post('/announcements', formData);
+      }
       setShowModal(false);
+      setEditingAnnouncement(null);
       setFormData({ title: '', content: '', target_audience: { roles: ['all'] } });
       fetchAnnouncements();
     } catch (error) {
-      console.error('Error creating announcement:', error);
-      alert('Failed to create announcement: ' + (error.response?.data?.error || error.message));
+      console.error('Error saving announcement:', error);
+      alert('Failed to save announcement: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
+  const handleEdit = (announcement) => {
+    setEditingAnnouncement(announcement);
+    setFormData({
+      title: announcement.title || '',
+      content: announcement.content || '',
+      target_audience: announcement.target_audience ? JSON.parse(announcement.target_audience) : { roles: ['all'] }
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this announcement?')) return;
+    try {
+      await axios.delete(`/announcements/${id}`);
+      setAnnouncements(announcements.filter(a => a.id !== id));
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      alert('Failed to delete announcement');
     }
   };
 
@@ -106,15 +135,35 @@ export default function Announcements() {
                       {new Date(announcement.publish_date).toLocaleDateString()}
                     </p>
                   </div>
-                  {announcement.is_active ? (
-                    <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
-                      Inactive
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {announcement.is_active ? (
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
+                        Inactive
+                      </span>
+                    )}
+                    {canCreate && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleEdit(announcement)}
+                          className="p-1 hover:bg-gray-100 rounded"
+                          title="Edit"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(announcement.id)}
+                          className="p-1 hover:bg-gray-100 rounded text-red-600"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <p className="text-gray-700 whitespace-pre-wrap">{announcement.content}</p>
                 {announcement.target_audience && (

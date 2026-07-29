@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
-import { Search, Download, Printer, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
+import { Search, Download, Printer, ChevronLeft, ChevronRight, ArrowUpDown, Edit, Trash2 } from 'lucide-react';
 
 export default function Invoices() {
   const { token } = useAuth();
@@ -14,12 +14,22 @@ export default function Invoices() {
   const [invoices, setInvoices] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInvoices, setSelectedInvoices] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortColumn, setSortColumn] = useState('invoice_number');
   const [sortDirection, setSortDirection] = useState('asc');
+  const [formData, setFormData] = useState({
+    student_id: '',
+    academic_year: '',
+    fee_assignment_ids: [],
+    due_date: '',
+    notes: '',
+    status: 'pending'
+  });
 
   useEffect(() => {
     fetchInvoices();
@@ -110,6 +120,56 @@ export default function Invoices() {
       prev.includes(id) ? prev.filter(iid => iid !== id) : [...prev, id]
     )
   }
+
+  const handleEdit = (invoice) => {
+    setEditingInvoice(invoice);
+    setFormData({
+      student_id: invoice.student_id || '',
+      academic_year: invoice.academic_year || '',
+      fee_assignment_ids: [],
+      due_date: invoice.due_date || '',
+      notes: invoice.notes || '',
+      status: invoice.status || 'pending'
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this invoice?')) return;
+    try {
+      await axios.delete(`/invoices/${id}`);
+      setInvoices(invoices.filter(i => i.id !== id));
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      alert('Failed to delete invoice');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingInvoice) {
+        await axios.put(`/invoices/${editingInvoice.id}`, formData);
+        setInvoices(invoices.map(i => i.id === editingInvoice.id ? { ...i, ...formData } : i));
+      } else {
+        await axios.post('/invoices', formData);
+      }
+      setShowModal(false);
+      setEditingInvoice(null);
+      setFormData({
+        student_id: '',
+        academic_year: '',
+        fee_assignment_ids: [],
+        due_date: '',
+        notes: '',
+        status: 'pending'
+      });
+      fetchInvoices();
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      alert('Failed to save invoice');
+    }
+  };
 
   const handleExportCSV = () => {
     const headers = ['Invoice #', 'Student', 'Academic Year', 'Total', 'Due Date', 'Status', 'Balance Due']
@@ -413,13 +473,21 @@ export default function Invoices() {
                         {(invoice?.balance_due ?? 0).toLocaleString()} {invoice.currency}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => fetchInvoiceDetails(invoice.id)}
-                        >
-                          View
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => fetchInvoiceDetails(invoice.id)}
+                          >
+                            View
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(invoice)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(invoice.id)}>
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
