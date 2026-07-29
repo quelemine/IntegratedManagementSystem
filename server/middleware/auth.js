@@ -32,6 +32,7 @@ const authenticate = async (req, res, next) => {
       email: user.email,
       role_id: user.role_id,
       role: user.role,
+      role_name: user.role,
       school_id: user.school_id,
       first_name: user.first_name,
       last_name: user.last_name
@@ -75,7 +76,9 @@ const optionalAuth = async (req, res, next) => {
         role_id: user.role_id,
         school_id: user.school_id,
         first_name: user.first_name,
-        last_name: user.last_name
+        last_name: user.last_name,
+        role: user.role,
+        role_name: user.role
       };
     }
     
