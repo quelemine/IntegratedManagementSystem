@@ -24,9 +24,9 @@ function ParentChildAttendance() {
         ])
         setAttendance(attendanceRes.data.data || [])
         setChild(childRes.data.data)
+        setLoading(false)
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to fetch attendance data')
-      } finally {
         setLoading(false)
       }
     }

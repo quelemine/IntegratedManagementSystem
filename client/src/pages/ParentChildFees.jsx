@@ -27,9 +27,9 @@ function ParentChildFees() {
         setInvoices(invoicesRes.data.data || [])
         setPayments(paymentsRes.data.data || [])
         setChild(childRes.data.data)
+        setLoading(false)
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to fetch fees data')
-      } finally {
         setLoading(false)
       }
     }

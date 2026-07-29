@@ -227,23 +227,30 @@ const getParentChildren = async (req, res) => {
     const userId = req.user.id;
     const schoolId = req.user.school_id;
 
+    console.log('[PARENT CHILDREN] Request received');
+    console.log('[PARENT CHILDREN] User ID:', userId);
+    console.log('[PARENT CHILDREN] School ID:', schoolId);
+
     // Get parent record for the user
     const parent = await db('parents').where('user_id', userId).where('school_id', schoolId).first();
     if (!parent) {
+      console.log('[PARENT CHILDREN] Parent record not found');
       return res.status(404).json({ success: false, error: 'Parent record not found' });
     }
+
+    console.log('[PARENT CHILDREN] Parent found:', parent.id);
 
     // Get children through relationships
     const children = await db('parent_student_relationships as psr')
       .select(
         'students.id',
         'students.student_id',
-        'students.first_name',
-        'students.last_name',
+        'users.first_name',
+        'users.last_name',
         'students.date_of_birth',
         'students.gender',
         'students.address',
-        'students.phone',
+        'users.phone',
         'students.class_id',
         'students.grade_id',
         'students.division_id',
@@ -255,20 +262,24 @@ const getParentChildren = async (req, res) => {
         'divisions.name as division_name'
       )
       .join('students', 'psr.student_id', 'students.id')
+      .leftJoin('users', 'students.user_id', 'users.id')
       .leftJoin('classes', 'students.class_id', 'classes.id')
       .leftJoin('grades', 'students.grade_id', 'grades.id')
       .leftJoin('divisions', 'students.division_id', 'divisions.id')
       .where('psr.parent_id', parent.id)
       .where('students.school_id', schoolId)
       .orderBy('psr.is_primary', 'desc')
-      .orderBy('students.last_name', 'asc');
+      .orderBy('users.last_name', 'asc');
+
+    console.log('[PARENT CHILDREN] Children found:', children.length);
 
     res.json({
       success: true,
       data: children
     });
   } catch (error) {
-    console.error('Error fetching parent children:', error);
+    console.error('[PARENT CHILDREN] Error:', error);
+    console.error('[PARENT CHILDREN] Error stack:', error.stack);
     res.status(500).json({ success: false, error: 'Failed to fetch children' });
   }
 };

@@ -24,9 +24,9 @@ function ParentChildAssignments() {
         ])
         setAssignments(assignmentsRes.data.data || [])
         setChild(childRes.data.data)
+        setLoading(false)
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to fetch assignments data')
-      } finally {
         setLoading(false)
       }
     }

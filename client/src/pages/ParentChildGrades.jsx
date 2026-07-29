@@ -24,9 +24,9 @@ function ParentChildGrades() {
         ])
         setGrades(gradesRes.data.data || [])
         setChild(childRes.data.data)
+        setLoading(false)
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to fetch grades data')
-      } finally {
         setLoading(false)
       }
     }
