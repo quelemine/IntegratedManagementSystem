@@ -17,15 +17,17 @@ const getRelationships = async (req, res) => {
         'psr.relationship_type',
         'psr.is_primary',
         'psr.created_at',
-        'parents.first_name as parent_first_name',
-        'parents.last_name as parent_last_name',
-        'parents.email as parent_email',
+        'users.first_name as parent_first_name',
+        'users.last_name as parent_last_name',
+        'users.email as parent_email',
         'students.student_id as student_student_id',
-        'students.first_name as student_first_name',
-        'students.last_name as student_last_name'
+        'student_users.first_name as student_first_name',
+        'student_users.last_name as student_last_name'
       )
       .join('parents', 'psr.parent_id', 'parents.id')
+      .join('users', 'parents.user_id', 'users.id')
       .join('students', 'psr.student_id', 'students.id')
+      .leftJoin('users as student_users', 'students.user_id', 'student_users.id')
       .where('parents.school_id', schoolId);
 
     if (parent_id) {

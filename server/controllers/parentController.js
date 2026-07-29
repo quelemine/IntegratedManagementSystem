@@ -23,12 +23,11 @@ const getParents = async (req, res) => {
         'parents.relationship',
         'parents.occupation',
         'parents.employer',
-        'parents.phone',
-        'parents.address',
         'users.id as user_id',
         'users.first_name',
         'users.last_name',
         'users.email',
+        'users.phone',
         'users.school_id'
       )
       .join('users', 'parents.user_id', 'users.id')
