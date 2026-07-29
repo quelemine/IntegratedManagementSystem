@@ -86,7 +86,7 @@ const getAdminAnalytics = async (req, res) => {
       outstandingBalances = await db('invoices')
         .where('school_id', schoolId)
         .where('status', 'pending')
-        .sum('amount as total')
+        .sum('total_amount as total')
         .first();
       console.log('[DASHBOARD] Outstanding balances query completed:', outstandingBalances?.total);
     } catch (error) {
@@ -103,9 +103,9 @@ const getAdminAnalytics = async (req, res) => {
         .where('students.school_id', schoolId)
         .where('attendance.date', '>=', db.raw("NOW() - INTERVAL '30 days'"))
         .select(
-          db.raw('COUNT(*) FILTER (WHERE status = "present") as present'),
-          db.raw('COUNT(*) FILTER (WHERE status = "absent") as absent'),
-          db.raw('COUNT(*) FILTER (WHERE status = "late") as late'),
+          db.raw('COUNT(*) FILTER (WHERE attendance.status = \'present\') as present'),
+          db.raw('COUNT(*) FILTER (WHERE attendance.status = \'absent\') as absent'),
+          db.raw('COUNT(*) FILTER (WHERE attendance.status = \'late\') as late'),
           db.raw('COUNT(*) as total')
         )
         .first();
@@ -166,54 +166,58 @@ const getAdminAnalytics = async (req, res) => {
  */
 const getTeacherAnalytics = async (req, res) => {
   try {
-    const schoolId = req.user.school_id;
+    console.log('[TEACHER DASHBOARD] Request received');
+    
     const userId = req.user.id;
 
     // Get teacher record
     const teacher = await db('teachers')
       .where('user_id', userId)
-      .where('school_id', schoolId)
       .first();
 
     if (!teacher) {
+      console.log('[TEACHER DASHBOARD] Teacher record not found for user_id:', userId);
       return res.status(404).json({ success: false, error: 'Teacher record not found' });
     }
 
-    // Get assigned classes
+    console.log('[TEACHER DASHBOARD] Teacher found:', teacher.id);
+
+    // Get assigned classes (using homeroom_teacher_id)
     const assignedClasses = await db('classes')
       .join('grades', 'classes.grade_id', 'grades.id')
-      .where('classes.teacher_id', teacher.id)
-      .where('classes.school_id', schoolId)
-      .select('classes.*', 'grades.name as grade_name')
+      .where('classes.homeroom_teacher_id', userId)
       .count('* as count')
       .first();
+
+    console.log('[TEACHER DASHBOARD] Assigned classes:', assignedClasses?.count);
 
     // Get total students in assigned classes
     const totalStudents = await db('students')
       .join('classes', 'students.class_id', 'classes.id')
-      .where('classes.teacher_id', teacher.id)
-      .where('students.school_id', schoolId)
+      .where('classes.homeroom_teacher_id', userId)
       .count('* as count')
       .first();
+
+    console.log('[TEACHER DASHBOARD] Total students:', totalStudents?.count);
 
     // Get pending grading tasks (assignments without grades)
     const pendingGrading = await db('student_grades')
       .join('students', 'student_grades.student_id', 'students.id')
       .join('classes', 'students.class_id', 'classes.id')
-      .where('classes.teacher_id', teacher.id)
-      .where('student_grades.school_id', schoolId)
-      .whereNull('student_grades.grade')
+      .where('classes.homeroom_teacher_id', userId)
+      .whereNull('student_grades.score')
       .count('* as count')
       .first();
+
+    console.log('[TEACHER DASHBOARD] Pending grading:', pendingGrading?.count);
 
     // Get recent submissions
     const recentSubmissions = await db('student_grades')
       .join('students', 'student_grades.student_id', 'students.id')
       .join('users', 'students.user_id', 'users.id')
       .join('classes', 'students.class_id', 'classes.id')
-      .where('classes.teacher_id', teacher.id)
-      .where('student_grades.school_id', schoolId)
-      .whereNotNull('student_grades.grade')
+      .where('classes.homeroom_teacher_id', userId)
+      .whereNotNull('student_grades.score')
       .select(
         'student_grades.*',
         'users.first_name',
@@ -223,17 +227,20 @@ const getTeacherAnalytics = async (req, res) => {
       .orderBy('student_grades.updated_at', 'desc')
       .limit(5);
 
+    console.log('[TEACHER DASHBOARD] Recent submissions:', recentSubmissions?.length);
+
     res.json({
       success: true,
       data: {
-        assignedClasses: parseInt(assignedClasses.count) || 0,
-        totalStudents: parseInt(totalStudents.count) || 0,
-        pendingGrading: parseInt(pendingGrading.count) || 0,
-        recentSubmissions
+        assignedClasses: parseInt(assignedClasses?.count) || 0,
+        totalStudents: parseInt(totalStudents?.count) || 0,
+        pendingGrading: parseInt(pendingGrading?.count) || 0,
+        recentSubmissions: recentSubmissions || []
       }
     });
   } catch (error) {
-    console.error('Get teacher analytics error:', error);
+    console.error('[TEACHER DASHBOARD] Error:', error);
+    console.error('[TEACHER DASHBOARD] Error stack:', error.stack);
     res.status(500).json({ success: false, error: 'Failed to fetch teacher analytics' });
   }
 };
@@ -250,7 +257,6 @@ const getStudentAnalytics = async (req, res) => {
     // Get student record
     const student = await db('students')
       .where('user_id', userId)
-      .where('school_id', schoolId)
       .first();
 
     if (!student) {
@@ -259,14 +265,13 @@ const getStudentAnalytics = async (req, res) => {
 
     // Get academic progress (grades by subject)
     const academicProgress = await db('student_grades')
-      .join('subjects', 'student_grades.subject_id', 'subjects.id')
+      .join('courses', 'student_grades.course_id', 'courses.id')
       .where('student_grades.student_id', student.id)
-      .where('student_grades.school_id', schoolId)
-      .select('subjects.name as subject', 'student_grades.grade')
-      .orderBy('subjects.name');
+      .select('courses.name as subject', 'student_grades.score')
+      .orderBy('courses.name');
 
     // Calculate average grade
-    const grades = academicProgress.map(g => parseFloat(g.grade)).filter(g => !isNaN(g));
+    const grades = academicProgress.map(g => parseFloat(g.score)).filter(g => !isNaN(g));
     const averageGrade = grades.length > 0 
       ? (grades.reduce((sum, g) => sum + g, 0) / grades.length).toFixed(1)
       : 0;
@@ -276,9 +281,9 @@ const getStudentAnalytics = async (req, res) => {
       .where('student_id', student.id)
       .where('date', '>=', db.raw("NOW() - INTERVAL '30 days'"))
       .select(
-        db.raw('COUNT(*) FILTER (WHERE status = "present") as present'),
-        db.raw('COUNT(*) FILTER (WHERE status = "absent") as absent'),
-        db.raw('COUNT(*) FILTER (WHERE status = "late") as late'),
+        db.raw('COUNT(*) FILTER (WHERE attendance.status = \'present\') as present'),
+        db.raw('COUNT(*) FILTER (WHERE attendance.status = \'absent\') as absent'),
+        db.raw('COUNT(*) FILTER (WHERE attendance.status = \'late\') as late'),
         db.raw('COUNT(*) as total')
       )
       .first();
@@ -293,19 +298,18 @@ const getStudentAnalytics = async (req, res) => {
       .where('students.user_id', userId)
       .where('invoices.school_id', schoolId)
       .select(
-        db.raw('SUM(CASE WHEN status = "pending" THEN amount ELSE 0 END) as outstanding'),
-        db.raw('SUM(CASE WHEN status = "paid" THEN amount ELSE 0 END) as paid'),
-        db.raw('SUM(amount) as total')
+        db.raw('SUM(CASE WHEN invoices.status = \'pending\' THEN total_amount ELSE 0 END) as outstanding'),
+        db.raw('SUM(CASE WHEN invoices.status = \'paid\' THEN total_amount ELSE 0 END) as paid'),
+        db.raw('SUM(total_amount) as total')
       )
       .first();
 
     // Get recent grades
     const recentGrades = await db('student_grades')
-      .join('subjects', 'student_grades.subject_id', 'subjects.id')
+      .join('courses', 'student_grades.course_id', 'courses.id')
       .where('student_grades.student_id', student.id)
-      .where('student_grades.school_id', schoolId)
-      .whereNotNull('student_grades.grade')
-      .select('student_grades.*', 'subjects.name as subject')
+      .whereNotNull('student_grades.score')
+      .select('student_grades.*', 'courses.name as subject')
       .orderBy('student_grades.updated_at', 'desc')
       .limit(5);
 
@@ -349,7 +353,6 @@ const getParentAnalytics = async (req, res) => {
     // Get parent record
     const parent = await db('parents')
       .where('user_id', userId)
-      .where('school_id', schoolId)
       .first();
 
     if (!parent) {
@@ -361,7 +364,7 @@ const getParentAnalytics = async (req, res) => {
       .join('students', 'parent_student_relationships.student_id', 'students.id')
       .join('users', 'students.user_id', 'users.id')
       .where('parent_student_relationships.parent_id', parent.id)
-      .select('students.*', 'users.first_name', 'users.last_name');
+      .select('students.id', 'students.student_id', 'users.first_name', 'users.last_name');
 
     // Get analytics for each student
     const childrenAnalytics = await Promise.all(
@@ -369,10 +372,9 @@ const getParentAnalytics = async (req, res) => {
         // Get average grade
         const grades = await db('student_grades')
           .where('student_id', student.id)
-          .where('school_id', schoolId)
-          .select('grade');
+          .select('score');
         
-        const gradeValues = grades.map(g => parseFloat(g.grade)).filter(g => !isNaN(g));
+        const gradeValues = grades.map(g => parseFloat(g.score)).filter(g => !isNaN(g));
         const averageGrade = gradeValues.length > 0 
           ? (gradeValues.reduce((sum, g) => sum + g, 0) / gradeValues.length).toFixed(1)
           : 0;
@@ -382,7 +384,7 @@ const getParentAnalytics = async (req, res) => {
           .where('student_id', student.id)
           .where('date', '>=', db.raw("NOW() - INTERVAL '30 days'"))
           .select(
-            db.raw('COUNT(*) FILTER (WHERE status = "present") as present'),
+            db.raw('COUNT(*) FILTER (WHERE attendance.status = \'present\') as present'),
             db.raw('COUNT(*) as total')
           )
           .first();
@@ -396,7 +398,7 @@ const getParentAnalytics = async (req, res) => {
           .where('student_id', student.id)
           .where('school_id', schoolId)
           .where('status', 'pending')
-          .sum('amount as total')
+          .sum('total_amount as total')
           .first();
 
         return {
