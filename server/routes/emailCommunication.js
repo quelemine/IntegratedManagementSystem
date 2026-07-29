@@ -27,23 +27,23 @@ router.get('/recipients', authenticate, async (req, res) => {
     let query = db('students')
       .select(
         'students.id',
-        'students.student_number',
-        'students.first_name',
-        'students.last_name',
-        'students.email',
+        'students.student_id as student_number',
+        'users.first_name',
+        'users.last_name',
+        'users.email',
         'students.grade_id',
         'students.class_id',
         'students.division_id',
-        'students.academic_year',
         'grades.name as grade_name',
         'classes.name as class_name',
         'divisions.name as division_name'
       )
+      .join('users', 'students.user_id', 'users.id')
       .leftJoin('grades', 'students.grade_id', 'grades.id')
       .leftJoin('classes', 'students.class_id', 'classes.id')
       .leftJoin('divisions', 'students.division_id', 'divisions.id')
-      .whereNotNull('students.email')
-      .where('students.email', '!=', '');
+      .whereNotNull('users.email')
+      .where('users.email', '!=', '');
 
     if (grade_id) {
       query = query.where('students.grade_id', grade_id);
@@ -53,9 +53,6 @@ router.get('/recipients', authenticate, async (req, res) => {
     }
     if (division_id) {
       query = query.where('students.division_id', division_id);
-    }
-    if (academic_year) {
-      query = query.where('students.academic_year', academic_year);
     }
 
     const recipients = await query;
@@ -156,26 +153,29 @@ router.get('/stats', authenticate, async (req, res) => {
     }
 
     const totalStudents = await db('students')
-      .whereNotNull('email')
-      .where('email', '!=', '')
+      .join('users', 'students.user_id', 'users.id')
+      .whereNotNull('users.email')
+      .where('users.email', '!=', '')
       .count('* as count')
       .first();
 
     const byGrade = await db('students')
       .select('grades.name as grade_name')
       .count('students.id as count')
+      .join('users', 'students.user_id', 'users.id')
       .leftJoin('grades', 'students.grade_id', 'grades.id')
-      .whereNotNull('students.email')
-      .where('students.email', '!=', '')
+      .whereNotNull('users.email')
+      .where('users.email', '!=', '')
       .groupBy('grades.id', 'grades.name')
       .orderBy('grades.name');
 
     const byClass = await db('students')
       .select('classes.name as class_name')
       .count('students.id as count')
+      .join('users', 'students.user_id', 'users.id')
       .leftJoin('classes', 'students.class_id', 'classes.id')
-      .whereNotNull('students.email')
-      .where('students.email', '!=', '')
+      .whereNotNull('users.email')
+      .where('users.email', '!=', '')
       .groupBy('classes.id', 'classes.name')
       .orderBy('classes.name');
 
