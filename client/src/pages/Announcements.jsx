@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axios';
 
 export default function Announcements() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -17,7 +19,7 @@ export default function Announcements() {
 
   useEffect(() => {
     fetchAnnouncements();
-  }, [token]);
+  }, []);
 
   const fetchAnnouncements = async () => {
     setLoading(true);
