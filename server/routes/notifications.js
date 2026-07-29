@@ -11,10 +11,13 @@ const {
   updateNotificationPreferences,
   sendSystemNotification
 } = require('../controllers/notificationController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorization');
 
-// All routes require authentication
+// GET /api/notifications/unread-count - Get unread notification count (optional auth)
+router.get('/unread-count', optionalAuth, getUnreadCount);
+
+// All other routes require authentication
 router.use(authenticate);
 
 // GET /api/notifications - Get all notifications for the user
@@ -22,9 +25,6 @@ router.get('/', getNotifications);
 
 // GET /api/notifications/history - Get notification history (paginated)
 router.get('/history', getNotificationHistory);
-
-// GET /api/notifications/unread-count - Get unread notification count
-router.get('/unread-count', getUnreadCount);
 
 // GET /api/notifications/preferences - Get user notification preferences
 router.get('/preferences', getNotificationPreferences);

@@ -41,6 +41,11 @@ const getNotifications = async (req, res) => {
  */
 const getUnreadCount = async (req, res) => {
   try {
+    // If no user is authenticated, return 0
+    if (!req.user) {
+      return res.json({ success: true, data: { count: 0 } });
+    }
+
     const userId = req.user.id;
 
     const count = await db('notifications')
