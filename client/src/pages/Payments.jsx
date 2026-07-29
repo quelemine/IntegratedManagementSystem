@@ -1,13 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axios';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Modal } from '@/components/ui/modal';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { Plus, Search, Download, Printer, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 
 export default function Payments() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [paymentType, setPaymentType] = useState('system'); // 'system' or 'external'
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPayments, setSelectedPayments] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortColumn, setSortColumn] = useState('payment_date');
+  const [sortDirection, setSortDirection] = useState('desc');
   const [formData, setFormData] = useState({
     invoice_id: '',
     amount_paid: '',
@@ -69,6 +83,84 @@ export default function Payments() {
     }
   };
 
+  const filteredPayments = payments.filter(payment =>
+    `${payment.student_first_name} ${payment.student_last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.payment_reference?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Sort payments
+  const sortedPayments = [...filteredPayments].sort((a, b) => {
+    let aVal = a[sortColumn];
+    let bVal = b[sortColumn];
+    
+    if (sortColumn === 'student_name') {
+      aVal = `${a.student_first_name} ${a.student_last_name}`;
+      bVal = `${b.student_first_name} ${b.student_last_name}`;
+    }
+    
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(sortedPayments.length / itemsPerPage)
+  const paginatedPayments = sortedPayments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedPayments(paginatedPayments.map(p => p.id))
+    } else {
+      setSelectedPayments([])
+    }
+  }
+
+  const handleSelectPayment = (id) => {
+    setSelectedPayments(prev =>
+      prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
+    )
+  }
+
+  const handleExportCSV = () => {
+    const headers = ['Date', 'Student', 'Invoice #', 'Method', 'Amount', 'Reference', 'Status', 'Received By']
+    const rows = sortedPayments.map(p => [
+      new Date(p.payment_date).toLocaleDateString(),
+      `${p.student_first_name} ${p.student_last_name}`,
+      p.invoice_number || 'N/A',
+      p.payment_method,
+      (p?.amount ?? 0).toLocaleString(),
+      p.payment_reference || 'N/A',
+      p.status,
+      `${p.received_by_first_name} ${p.received_by_last_name}`
+    ])
+    
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'payments_export.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
+
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
@@ -87,26 +179,36 @@ export default function Payments() {
             <div className="flex items-center justify-between w-full sm:w-auto gap-2 sm:gap-3">
               <h1 className="text-lg sm:text-xl font-bold">Payment Management</h1>
               <div className="flex gap-2">
-                <button
+                <Button onClick={handleExportCSV} variant="outline" className="text-sm sm:text-base">
+                  <Download className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+                <Button onClick={handlePrint} variant="outline" className="text-sm sm:text-base">
+                  <Printer className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Print</span>
+                </Button>
+                <Button
                   onClick={() => {
                     setShowModal(true)
                     setPaymentType('system')
                   }}
-                  className="px-3 py-2 sm:px-4 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm sm:text-base"
+                  className="text-sm sm:text-base"
                 >
+                  <Plus className="h-4 w-4 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Record</span>
                   <span className="sm:hidden">Rec</span>
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => {
                     setShowModal(true)
                     setPaymentType('external')
                   }}
-                  className="px-3 py-2 sm:px-4 bg-green-500 text-white rounded hover:bg-green-600 text-sm sm:text-base"
+                  variant="outline"
+                  className="text-sm sm:text-base"
                 >
                   <span className="hidden sm:inline">External</span>
                   <span className="sm:hidden">Ext</span>
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -114,200 +216,339 @@ export default function Payments() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="px-4 py-3 border">Date</th>
-                <th className="px-4 py-3 border">Student</th>
-                <th className="px-4 py-3 border">Invoice #</th>
-                <th className="px-4 py-3 border">Method</th>
-                <th className="px-4 py-3 border">Amount</th>
-                <th className="px-4 py-3 border">Reference</th>
-                <th className="px-4 py-3 border">Status</th>
-                <th className="px-4 py-3 border">Received By</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((payment) => (
-                <tr key={payment.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 border">
-                    {new Date(payment.payment_date).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 border">
-                    {payment.student_first_name} {payment.student_last_name}
-                  </td>
-                  <td className="px-4 py-3 border">{payment.invoice_number || 'N/A'}</td>
-                  <td className="px-4 py-3 border capitalize">{payment.payment_method}</td>
-                  <td className="px-4 py-3 border">
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search by student, invoice, or reference..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={paginatedPayments.length > 0 && selectedPayments.length === paginatedPayments.length}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-sm text-gray-600">
+                {selectedPayments.length} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Rows per page:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={paginatedPayments.length > 0 && selectedPayments.length === paginatedPayments.length}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="rounded"
+                  />
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('payment_date')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Date
+                    {sortColumn === 'payment_date' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('student_name')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Student
+                    {sortColumn === 'student_name' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>Invoice #</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('amount')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Amount
+                    {sortColumn === 'amount' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>Reference</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Received By</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedPayments.map((payment) => (
+                <TableRow key={payment.id} className={selectedPayments.includes(payment.id) ? 'bg-blue-50' : ''}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedPayments.includes(payment.id)}
+                      onChange={() => handleSelectPayment(payment.id)}
+                      className="rounded"
+                    />
+                  </TableCell>
+                  <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                  <TableCell>{payment.student_first_name} {payment.student_last_name}</TableCell>
+                  <TableCell>{payment.invoice_number || 'N/A'}</TableCell>
+                  <TableCell className="capitalize">{payment.payment_method}</TableCell>
+                  <TableCell>
                     {(payment?.amount ?? 0).toLocaleString()} {payment.currency}
-                  </td>
-                  <td className="px-4 py-3 border">{payment.payment_reference || 'N/A'}</td>
-                  <td className="px-4 py-3 border">
+                  </TableCell>
+                  <TableCell>{payment.payment_reference || 'N/A'}</TableCell>
+                  <TableCell>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(payment.status)}`}>
                       {payment.status.toUpperCase()}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 border">
+                  </TableCell>
+                  <TableCell>
                     {payment.received_by_first_name} {payment.received_by_last_name}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-          {payments.length === 0 && (
-            <div className="p-6 text-center text-gray-500">No payments found</div>
+            </TableBody>
+          </Table>
+          {paginatedPayments.length === 0 && (
+            <div className="text-center py-8 text-gray-500">No payments found</div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center p-4 border-t">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedPayments.length)} of {sortedPayments.length} payments
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-4">
-              {paymentType === 'system' ? 'Record Payment' : 'External Payment Entry'}
-            </h2>
-            <form onSubmit={handleSubmit}>
-              {paymentType === 'system' ? (
-                <>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Invoice ID</label>
-                    <input
-                      type="text"
-                      value={formData.invoice_id}
-                      onChange={(e) => setFormData({ ...formData, invoice_id: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Amount</label>
-                    <input
-                      type="number"
-                      value={formData.amount_paid}
-                      onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Payment Method</label>
-                    <select
-                      value={formData.payment_method}
-                      onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                    >
-                      <option value="cash">Cash</option>
-                      <option value="bank">Bank Transfer</option>
-                      <option value="mobile_money">Mobile Money</option>
-                      <option value="online">Online Payment</option>
-                    </select>
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Transaction Reference</label>
-                    <input
-                      type="text"
-                      value={formData.transaction_reference}
-                      onChange={(e) => setFormData({ ...formData, transaction_reference: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Notes</label>
-                    <textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                      rows="3"
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="mb-4 p-3 bg-blue-50 rounded text-sm text-blue-700">
-                    <p className="font-semibold">External Payment</p>
-                    <p>Use this when payment was made outside the system (e.g., bank, cash office)</p>
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Receipt Number *</label>
-                    <input
-                      type="text"
-                      value={formData.receipt_number}
-                      onChange={(e) => setFormData({ ...formData, receipt_number: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                      required
-                      placeholder="Enter receipt number from external source"
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Amount *</label>
-                    <input
-                      type="number"
-                      value={formData.amount_paid}
-                      onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Payment Method *</label>
-                    <select
-                      value={formData.payment_method}
-                      onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                      required
-                    >
-                      <option value="cash">Cash</option>
-                      <option value="bank">Bank Transfer</option>
-                      <option value="mobile_money">Mobile Money</option>
-                      <option value="check">Check</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Transaction Reference</label>
-                    <input
-                      type="text"
-                      value={formData.transaction_reference}
-                      onChange={(e) => setFormData({ ...formData, transaction_reference: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                      placeholder="Bank reference, check number, etc."
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">Notes</label>
-                    <textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                      rows="3"
-                      placeholder="Additional details about the payment"
-                    />
-                  </div>
-                </>
-              )}
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false)
-                    setPaymentType('system')
-                  }}
-                  className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  {paymentType === 'system' ? 'Record Payment' : 'Add External Payment'}
-                </button>
+      <Modal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false)
+          setPaymentType('system')
+        }}
+        title={paymentType === 'system' ? 'Record Payment' : 'External Payment Entry'}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {paymentType === 'system' ? (
+            <>
+              <div>
+                <Label htmlFor="invoice_id">Invoice ID</Label>
+                <Input
+                  id="invoice_id"
+                  value={formData.invoice_id}
+                  onChange={(e) => setFormData({ ...formData, invoice_id: e.target.value })}
+                  required
+                />
               </div>
-            </form>
+              <div>
+                <Label htmlFor="amount_paid">Amount</Label>
+                <Input
+                  id="amount_paid"
+                  type="number"
+                  value={formData.amount_paid}
+                  onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="payment_method">Payment Method</Label>
+                <select
+                  id="payment_method"
+                  value={formData.payment_method}
+                  onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                  className="w-full px-3 py-2 border rounded"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="bank">Bank Transfer</option>
+                  <option value="mobile_money">Mobile Money</option>
+                  <option value="online">Online Payment</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="transaction_reference">Transaction Reference</Label>
+                <Input
+                  id="transaction_reference"
+                  value={formData.transaction_reference}
+                  onChange={(e) => setFormData({ ...formData, transaction_reference: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full px-3 py-2 border rounded"
+                  rows="3"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-4 p-3 bg-blue-50 rounded text-sm text-blue-700">
+                <p className="font-semibold">External Payment</p>
+                <p>Use this when payment was made outside the system (e.g., bank, cash office)</p>
+              </div>
+              <div>
+                <Label htmlFor="receipt_number">Receipt Number *</Label>
+                <Input
+                  id="receipt_number"
+                  value={formData.receipt_number}
+                  onChange={(e) => setFormData({ ...formData, receipt_number: e.target.value })}
+                  required
+                  placeholder="Enter receipt number from external source"
+                />
+              </div>
+              <div>
+                <Label htmlFor="amount_paid">Amount *</Label>
+                <Input
+                  id="amount_paid"
+                  type="number"
+                  value={formData.amount_paid}
+                  onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="payment_method">Payment Method *</Label>
+                <select
+                  id="payment_method"
+                  value={formData.payment_method}
+                  onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                  className="w-full px-3 py-2 border rounded"
+                  required
+                >
+                  <option value="cash">Cash</option>
+                  <option value="bank">Bank Transfer</option>
+                  <option value="mobile_money">Mobile Money</option>
+                  <option value="check">Check</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="transaction_reference">Transaction Reference</Label>
+                <Input
+                  id="transaction_reference"
+                  value={formData.transaction_reference}
+                  onChange={(e) => setFormData({ ...formData, transaction_reference: e.target.value })}
+                  placeholder="Bank reference, check number, etc."
+                />
+              </div>
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full px-3 py-2 border rounded"
+                  rows="3"
+                  placeholder="Additional details about the payment"
+                />
+              </div>
+            </>
+          )}
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowModal(false)
+                setPaymentType('system')
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">
+              {paymentType === 'system' ? 'Record Payment' : 'Add External Payment'}
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }

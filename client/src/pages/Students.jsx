@@ -8,7 +8,7 @@ import { Select, SelectItem } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
-import { Plus, Edit, Trash2, Search, Upload } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, Upload, Download, Printer, ChevronLeft, ChevronRight, ArrowUpDown, Check } from 'lucide-react'
 
 function Students() {
   const [students, setStudents] = useState([])
@@ -25,6 +25,11 @@ function Students() {
   const [importProgress, setImportProgress] = useState(0)
   const [importResults, setImportResults] = useState(null)
   const [editingStudent, setEditingStudent] = useState(null)
+  const [selectedStudents, setSelectedStudents] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [sortColumn, setSortColumn] = useState('student_id')
+  const [sortDirection, setSortDirection] = useState('asc')
   const [formData, setFormData] = useState({
     student_id: '',
     class_id: '',
@@ -213,8 +218,81 @@ function Students() {
 
   const filteredStudents = students.filter(student =>
     student.student_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${student.first_name} ${student.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${student.first_name} ${student.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Sort students
+  const sortedStudents = [...filteredStudents].sort((a, b) => {
+    let aVal = a[sortColumn]
+    let bVal = b[sortColumn]
+    
+    if (sortColumn === 'name') {
+      aVal = `${a.first_name} ${a.last_name}`
+      bVal = `${b.first_name} ${b.last_name}`
+    }
+    
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
+  // Pagination
+  const totalPages = Math.ceil(sortedStudents.length / itemsPerPage)
+  const paginatedStudents = sortedStudents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedStudents(paginatedStudents.map(s => s.id))
+    } else {
+      setSelectedStudents([])
+    }
+  }
+
+  const handleSelectStudent = (id) => {
+    setSelectedStudents(prev =>
+      prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
+    )
+  }
+
+  const handleExportCSV = () => {
+    const headers = ['Student ID', 'Name', 'Email', 'Phone', 'Class', 'Grade', 'Division', 'Status']
+    const rows = sortedStudents.map(s => [
+      s.student_id,
+      `${s.first_name} ${s.last_name}`,
+      s.email || '',
+      s.phone || '',
+      s.class_name || 'N/A',
+      s.grade_name || 'N/A',
+      s.division_name || 'N/A',
+      s.status || 'active'
+    ])
+    
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'students_export.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
@@ -236,6 +314,14 @@ function Students() {
             <div className="flex items-center justify-between w-full sm:w-auto gap-3">
               <h1 className="text-lg sm:text-xl font-bold">Students</h1>
               <div className="flex gap-2">
+                <Button onClick={handleExportCSV} variant="outline" className="text-sm sm:text-base">
+                  <Download className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+                <Button onClick={handlePrint} variant="outline" className="text-sm sm:text-base">
+                  <Printer className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Print</span>
+                </Button>
                 <Button onClick={downloadTemplate} variant="outline" className="text-sm sm:text-base">
                   Download Template
                 </Button>
@@ -266,38 +352,132 @@ function Students() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search by student ID or name..."
+              placeholder="Search by student ID, name, or email..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCurrentPage(1)
+              }}
               className="pl-10"
             />
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={paginatedStudents.length > 0 && selectedStudents.length === paginatedStudents.length}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-sm text-gray-600">
+                {selectedStudents.length} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Rows per page:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Student ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Grade</TableHead>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={paginatedStudents.length > 0 && selectedStudents.length === paginatedStudents.length}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="rounded"
+                  />
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('student_id')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Student ID
+                    {sortColumn === 'student_id' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('name')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Name
+                    {sortColumn === 'name' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('class_name')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Class
+                    {sortColumn === 'class_name' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('grade_name')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Grade
+                    {sortColumn === 'grade_name' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>Division</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStudents.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell>{student.student_id}</TableCell>
+              {paginatedStudents.map((student) => (
+                <TableRow key={student.id} className={selectedStudents.includes(student.id) ? 'bg-blue-50' : ''}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedStudents.includes(student.id)}
+                      onChange={() => handleSelectStudent(student.id)}
+                      className="rounded"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{student.student_id}</TableCell>
                   <TableCell>{student.first_name} {student.last_name}</TableCell>
+                  <TableCell>{student.email || 'N/A'}</TableCell>
                   <TableCell>{student.class_name || 'N/A'}</TableCell>
                   <TableCell>{student.grade_name || 'N/A'}</TableCell>
+                  <TableCell>{student.division_name || 'N/A'}</TableCell>
                   <TableCell>
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
-                      {student.status}
+                      {student.status || 'active'}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -314,8 +494,61 @@ function Students() {
               ))}
             </TableBody>
           </Table>
-          {filteredStudents.length === 0 && (
+          {paginatedStudents.length === 0 && (
             <div className="text-center py-8 text-gray-500">No students found</div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center p-4 border-t">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedStudents.length)} of {sortedStudents.length} students
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </div>

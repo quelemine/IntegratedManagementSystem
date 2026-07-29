@@ -9,7 +9,7 @@ import { Select, SelectItem } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
-import { Plus, Edit, Trash2, Search, Calendar, BarChart3, Users, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, Calendar, BarChart3, Users, CheckCircle, XCircle, Clock, Download, Printer, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react'
 
 function Attendance() {
   const [attendance, setAttendance] = useState([])
@@ -23,6 +23,11 @@ function Attendance() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterClass, setFilterClass] = useState('')
   const [filterDate, setFilterDate] = useState('')
+  const [selectedAttendance, setSelectedAttendance] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [sortColumn, setSortColumn] = useState('date')
+  const [sortDirection, setSortDirection] = useState('desc')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false)
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false)
@@ -252,6 +257,76 @@ function Attendance() {
     `${att.first_name} ${att.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Sort attendance
+  const sortedAttendance = [...filteredAttendance].sort((a, b) => {
+    let aVal = a[sortColumn]
+    let bVal = b[sortColumn]
+    
+    if (sortColumn === 'student_name') {
+      aVal = `${a.first_name} ${a.last_name}`
+      bVal = `${b.first_name} ${b.last_name}`
+    }
+    
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
+  // Pagination
+  const totalPages = Math.ceil(sortedAttendance.length / itemsPerPage)
+  const paginatedAttendance = sortedAttendance.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedAttendance(paginatedAttendance.map(a => a.id))
+    } else {
+      setSelectedAttendance([])
+    }
+  }
+
+  const handleSelectAttendance = (id) => {
+    setSelectedAttendance(prev =>
+      prev.includes(id) ? prev.filter(aid => aid !== id) : [...prev, id]
+    )
+  }
+
+  const handleExportCSV = () => {
+    const headers = ['Date', 'Student ID', 'Name', 'Class', 'Status', 'Remarks']
+    const rows = sortedAttendance.map(a => [
+      a.date,
+      a.student_number || 'N/A',
+      `${a.first_name} ${a.last_name}`,
+      a.class_name || 'N/A',
+      a.status,
+      a.remarks || '-'
+    ])
+    
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'attendance_export.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
+
   const statusColors = {
     present: 'bg-green-100 text-green-800',
     absent: 'bg-red-100 text-red-800',
@@ -304,19 +379,29 @@ function Attendance() {
             </div>
             <div className="flex items-center justify-between w-full sm:w-auto gap-3">
               <h1 className="text-lg sm:text-xl font-bold">Attendance</h1>
-              {user && (user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
-                <Button onClick={() => { setIsStatsModalOpen(true); fetchStatistics(); }} className="text-sm sm:text-base">
-                  <BarChart3 className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Statistics</span>
+              <div className="flex gap-2">
+                {user && (user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal') && (
+                  <Button onClick={() => { setIsStatsModalOpen(true); fetchStatistics(); }} className="text-sm sm:text-base">
+                    <BarChart3 className="h-4 w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Statistics</span>
+                  </Button>
+                )}
+                <Button onClick={handleExportCSV} variant="outline" className="text-sm sm:text-base">
+                  <Download className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Export</span>
                 </Button>
-              )}
-              {user && (user.role === 'super_admin' || user.role === 'principal' || user.role === 'teacher') && (
-                <Button onClick={handleBulkCreate} className="text-sm sm:text-base">
-                  <Users className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Bulk Mark</span>
-                  <span className="sm:hidden">Bulk</span>
+                <Button onClick={handlePrint} variant="outline" className="text-sm sm:text-base">
+                  <Printer className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Print</span>
                 </Button>
-              )}
+                {user && (user.role === 'super_admin' || user.role === 'principal' || user.role === 'teacher') && (
+                  <Button onClick={handleBulkCreate} className="text-sm sm:text-base">
+                    <Users className="h-4 w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Bulk Mark</span>
+                    <span className="sm:hidden">Bulk</span>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -423,13 +508,16 @@ function Attendance() {
         {/* Admin/Teacher View - List */}
         {(user.role === 'super_admin' || user.role === 'admin' || user.role === 'principal' || user.role === 'teacher') && (
           <>
-            <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search by student ID or name..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value)
+                    setCurrentPage(1)
+                  }}
                   className="pl-10"
                 />
               </div>
@@ -452,15 +540,74 @@ function Attendance() {
                   placeholder="Filter by date"
                 />
               </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Rows per page:</label>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value))
+                    setCurrentPage(1)
+                  }}
+                  className="border rounded px-2 py-1 text-sm"
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="flex justify-between items-center p-4 border-b">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={paginatedAttendance.length > 0 && selectedAttendance.length === paginatedAttendance.length}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-sm text-gray-600">
+                    {selectedAttendance.length} selected
+                  </span>
+                </div>
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={paginatedAttendance.length > 0 && selectedAttendance.length === paginatedAttendance.length}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="rounded"
+                      />
+                    </TableHead>
+                    <TableHead>
+                      <button
+                        onClick={() => handleSort('date')}
+                        className="flex items-center gap-1 hover:text-gray-700"
+                      >
+                        Date
+                        {sortColumn === 'date' && (
+                          <ArrowUpDown className="h-4 w-4" />
+                        )}
+                      </button>
+                    </TableHead>
                     <TableHead>Student ID</TableHead>
-                    <TableHead>Name</TableHead>
+                    <TableHead>
+                      <button
+                        onClick={() => handleSort('student_name')}
+                        className="flex items-center gap-1 hover:text-gray-700"
+                      >
+                        Name
+                        {sortColumn === 'student_name' && (
+                          <ArrowUpDown className="h-4 w-4" />
+                        )}
+                      </button>
+                    </TableHead>
                     <TableHead>Class</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Remarks</TableHead>
@@ -468,8 +615,16 @@ function Attendance() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAttendance.map((att) => (
-                    <TableRow key={att.id}>
+                  {paginatedAttendance.map((att) => (
+                    <TableRow key={att.id} className={selectedAttendance.includes(att.id) ? 'bg-blue-50' : ''}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedAttendance.includes(att.id)}
+                          onChange={() => handleSelectAttendance(att.id)}
+                          className="rounded"
+                        />
+                      </TableCell>
                       <TableCell>{att.date}</TableCell>
                       <TableCell>{att.student_number || 'N/A'}</TableCell>
                       <TableCell>{att.first_name} {att.last_name}</TableCell>
@@ -496,8 +651,61 @@ function Attendance() {
                   ))}
                 </TableBody>
               </Table>
-              {filteredAttendance.length === 0 && (
+              {paginatedAttendance.length === 0 && (
                 <div className="text-center py-8 text-gray-500">No attendance records found</div>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center p-4 border-t">
+                  <div className="text-sm text-gray-600">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedAttendance.length)} of {sortedAttendance.length} records
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum
+                        if (totalPages <= 5) {
+                          pageNum = i + 1
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i
+                        } else {
+                          pageNum = currentPage - 2 + i
+                        }
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                          >
+                            {pageNum}
+                          </Button>
+                        )
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           </>

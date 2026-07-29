@@ -8,7 +8,7 @@ import { Select, SelectItem } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
-import { Plus, Edit, Trash2, Search } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, Download, Printer, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react'
 
 function Grades() {
   const [grades, setGrades] = useState([])
@@ -18,6 +18,11 @@ function Grades() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingGrade, setEditingGrade] = useState(null)
+  const [selectedGrades, setSelectedGrades] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [sortColumn, setSortColumn] = useState('name')
+  const [sortDirection, setSortDirection] = useState('asc')
   const [formData, setFormData] = useState({
     division_id: '',
     name: '',
@@ -110,6 +115,69 @@ function Grades() {
     grade.division_name?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Sort grades
+  const sortedGrades = [...filteredGrades].sort((a, b) => {
+    let aVal = a[sortColumn]
+    let bVal = b[sortColumn]
+    
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
+  // Pagination
+  const totalPages = Math.ceil(sortedGrades.length / itemsPerPage)
+  const paginatedGrades = sortedGrades.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedGrades(paginatedGrades.map(g => g.id))
+    } else {
+      setSelectedGrades([])
+    }
+  }
+
+  const handleSelectGrade = (id) => {
+    setSelectedGrades(prev =>
+      prev.includes(id) ? prev.filter(gid => gid !== id) : [...prev, id]
+    )
+  }
+
+  const handleExportCSV = () => {
+    const headers = ['Name', 'Code', 'Division', 'Order']
+    const rows = sortedGrades.map(g => [
+      g.name,
+      g.code,
+      g.division_name || 'N/A',
+      g.order || 'N/A'
+    ])
+    
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'grades_export.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
@@ -129,11 +197,21 @@ function Grades() {
             </div>
             <div className="flex items-center justify-between w-full sm:w-auto gap-3">
               <h1 className="text-lg sm:text-xl font-bold">Grades</h1>
-              <Button onClick={handleCreate} className="text-sm sm:text-base">
-                <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Add Grade</span>
-                <span className="sm:hidden">Add</span>
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleExportCSV} variant="outline" className="text-sm sm:text-base">
+                  <Download className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+                <Button onClick={handlePrint} variant="outline" className="text-sm sm:text-base">
+                  <Printer className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Print</span>
+                </Button>
+                <Button onClick={handleCreate} className="text-sm sm:text-base">
+                  <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Grade</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -152,27 +230,107 @@ function Grades() {
             <Input
               placeholder="Search by name, code, or division..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCurrentPage(1)
+              }}
               className="pl-10"
             />
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={paginatedGrades.length > 0 && selectedGrades.length === paginatedGrades.length}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-sm text-gray-600">
+                {selectedGrades.length} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Rows per page:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Code</TableHead>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={paginatedGrades.length > 0 && selectedGrades.length === paginatedGrades.length}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="rounded"
+                  />
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('name')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Name
+                    {sortColumn === 'name' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('code')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Code
+                    {sortColumn === 'code' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
                 <TableHead>Division</TableHead>
-                <TableHead>Order</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('order')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Order
+                    {sortColumn === 'order' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredGrades.map((grade) => (
-                <TableRow key={grade.id}>
-                  <TableCell>{grade.name}</TableCell>
+              {paginatedGrades.map((grade) => (
+                <TableRow key={grade.id} className={selectedGrades.includes(grade.id) ? 'bg-blue-50' : ''}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedGrades.includes(grade.id)}
+                      onChange={() => handleSelectGrade(grade.id)}
+                      className="rounded"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{grade.name}</TableCell>
                   <TableCell>{grade.code}</TableCell>
                   <TableCell>{grade.division_name || 'N/A'}</TableCell>
                   <TableCell>{grade.order || 'N/A'}</TableCell>
@@ -190,8 +348,61 @@ function Grades() {
               ))}
             </TableBody>
           </Table>
-          {filteredGrades.length === 0 && (
+          {paginatedGrades.length === 0 && (
             <div className="text-center py-8 text-gray-500">No grades found</div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center p-4 border-t">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedGrades.length)} of {sortedGrades.length} grades
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </div>

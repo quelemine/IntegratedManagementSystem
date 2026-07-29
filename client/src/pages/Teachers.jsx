@@ -8,7 +8,7 @@ import { Select, SelectItem } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
-import { Plus, Edit, Trash2, Search, Upload } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, Upload, Download, Printer, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react'
 
 function Teachers() {
   const [teachers, setTeachers] = useState([])
@@ -23,6 +23,11 @@ function Teachers() {
   const [importProgress, setImportProgress] = useState(0)
   const [importResults, setImportResults] = useState(null)
   const [editingTeacher, setEditingTeacher] = useState(null)
+  const [selectedTeachers, setSelectedTeachers] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [sortColumn, setSortColumn] = useState('employee_id')
+  const [sortDirection, setSortDirection] = useState('asc')
   const [formData, setFormData] = useState({
     user_id: '',
     employee_id: '',
@@ -201,8 +206,81 @@ function Teachers() {
 
   const filteredTeachers = teachers.filter(teacher =>
     teacher.employee_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${teacher.first_name} ${teacher.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${teacher.first_name} ${teacher.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    teacher.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Sort teachers
+  const sortedTeachers = [...filteredTeachers].sort((a, b) => {
+    let aVal = a[sortColumn]
+    let bVal = b[sortColumn]
+    
+    if (sortColumn === 'name') {
+      aVal = `${a.first_name} ${a.last_name}`
+      bVal = `${b.first_name} ${b.last_name}`
+    }
+    
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
+  // Pagination
+  const totalPages = Math.ceil(sortedTeachers.length / itemsPerPage)
+  const paginatedTeachers = sortedTeachers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedTeachers(paginatedTeachers.map(t => t.id))
+    } else {
+      setSelectedTeachers([])
+    }
+  }
+
+  const handleSelectTeacher = (id) => {
+    setSelectedTeachers(prev =>
+      prev.includes(id) ? prev.filter(tid => tid !== id) : [...prev, id]
+    )
+  }
+
+  const handleExportCSV = () => {
+    const headers = ['Employee ID', 'Name', 'Email', 'Phone', 'Subjects', 'Qualification', 'Experience', 'Status']
+    const rows = sortedTeachers.map(t => [
+      t.employee_id || 'N/A',
+      `${t.first_name} ${t.last_name}`,
+      t.email || 'N/A',
+      t.phone || 'N/A',
+      t.subjects || 'N/A',
+      t.qualification || 'N/A',
+      t.experience_years ? `${t.experience_years} years` : 'N/A',
+      t.status || 'active'
+    ])
+    
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'teachers_export.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
@@ -224,6 +302,14 @@ function Teachers() {
             <div className="flex items-center justify-between w-full sm:w-auto gap-3">
               <h1 className="text-lg sm:text-xl font-bold">Teachers</h1>
               <div className="flex gap-2">
+                <Button onClick={handleExportCSV} variant="outline" className="text-sm sm:text-base">
+                  <Download className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+                <Button onClick={handlePrint} variant="outline" className="text-sm sm:text-base">
+                  <Printer className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Print</span>
+                </Button>
                 <Button onClick={downloadTemplate} variant="outline" className="text-sm sm:text-base">
                   Download Template
                 </Button>
@@ -254,34 +340,146 @@ function Teachers() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search by employee ID or name..."
+              placeholder="Search by employee ID, name, or email..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCurrentPage(1)
+              }}
               className="pl-10"
             />
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={paginatedTeachers.length > 0 && selectedTeachers.length === paginatedTeachers.length}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-sm text-gray-600">
+                {selectedTeachers.length} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Rows per page:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Employee ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Subjects</TableHead>
-                <TableHead>Qualification</TableHead>
-                <TableHead>Experience</TableHead>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={paginatedTeachers.length > 0 && selectedTeachers.length === paginatedTeachers.length}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="rounded"
+                  />
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('employee_id')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Employee ID
+                    {sortColumn === 'employee_id' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('name')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Name
+                    {sortColumn === 'name' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('subjects')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Subjects
+                    {sortColumn === 'subjects' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('qualification')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Qualification
+                    {sortColumn === 'qualification' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('experience_years')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Experience
+                    {sortColumn === 'experience_years' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTeachers.map((teacher) => (
-                <TableRow key={teacher.id}>
-                  <TableCell>{teacher.employee_id || 'N/A'}</TableCell>
+              {paginatedTeachers.map((teacher) => (
+                <TableRow key={teacher.id} className={selectedTeachers.includes(teacher.id) ? 'bg-blue-50' : ''}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedTeachers.includes(teacher.id)}
+                      onChange={() => handleSelectTeacher(teacher.id)}
+                      className="rounded"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{teacher.employee_id || 'N/A'}</TableCell>
                   <TableCell>{teacher.first_name} {teacher.last_name}</TableCell>
+                  <TableCell>{teacher.email || 'N/A'}</TableCell>
+                  <TableCell>{teacher.phone || 'N/A'}</TableCell>
                   <TableCell>{teacher.subjects || 'N/A'}</TableCell>
                   <TableCell>{teacher.qualification || 'N/A'}</TableCell>
                   <TableCell>{teacher.experience_years ? `${teacher.experience_years} years` : 'N/A'}</TableCell>
+                  <TableCell>
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      teacher.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {teacher.status || 'active'}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(teacher)}>
@@ -296,8 +494,61 @@ function Teachers() {
               ))}
             </TableBody>
           </Table>
-          {filteredTeachers.length === 0 && (
+          {paginatedTeachers.length === 0 && (
             <div className="text-center py-8 text-gray-500">No teachers found</div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center p-4 border-t">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedTeachers.length)} of {sortedTeachers.length} teachers
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </div>

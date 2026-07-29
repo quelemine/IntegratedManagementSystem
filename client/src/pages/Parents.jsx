@@ -8,7 +8,7 @@ import { Select, SelectItem } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
-import { Plus, Edit, Trash2, Search, Upload } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, Upload, Download, Printer, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react'
 
 function Parents() {
   const [parents, setParents] = useState([])
@@ -23,6 +23,11 @@ function Parents() {
   const [importProgress, setImportProgress] = useState(0)
   const [importResults, setImportResults] = useState(null)
   const [editingParent, setEditingParent] = useState(null)
+  const [selectedParents, setSelectedParents] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [sortColumn, setSortColumn] = useState('name')
+  const [sortDirection, setSortDirection] = useState('asc')
   const [formData, setFormData] = useState({
     user_id: '',
     relationship: '',
@@ -192,8 +197,81 @@ function Parents() {
 
   const filteredParents = parents.filter(parent =>
     `${parent.first_name} ${parent.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    parent.relationship?.toLowerCase().includes(searchTerm.toLowerCase())
+    parent.relationship?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    parent.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Sort parents
+  const sortedParents = [...filteredParents].sort((a, b) => {
+    let aVal = a[sortColumn]
+    let bVal = b[sortColumn]
+    
+    if (sortColumn === 'name') {
+      aVal = `${a.first_name} ${a.last_name}`
+      bVal = `${b.first_name} ${b.last_name}`
+    }
+    
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
+  // Pagination
+  const totalPages = Math.ceil(sortedParents.length / itemsPerPage)
+  const paginatedParents = sortedParents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedParents(paginatedParents.map(p => p.id))
+    } else {
+      setSelectedParents([])
+    }
+  }
+
+  const handleSelectParent = (id) => {
+    setSelectedParents(prev =>
+      prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
+    )
+  }
+
+  const handleExportCSV = () => {
+    const headers = ['Name', 'Email', 'Phone', 'Relationship', 'Occupation', 'Employer', 'Address', 'Status']
+    const rows = sortedParents.map(p => [
+      `${p.first_name} ${p.last_name}`,
+      p.email || 'N/A',
+      p.phone || 'N/A',
+      p.relationship || 'N/A',
+      p.occupation || 'N/A',
+      p.employer || 'N/A',
+      p.address || 'N/A',
+      p.status || 'active'
+    ])
+    
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'parents_export.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
@@ -215,6 +293,14 @@ function Parents() {
             <div className="flex items-center justify-between w-full sm:w-auto gap-3">
               <h1 className="text-lg sm:text-xl font-bold">Parents</h1>
               <div className="flex gap-2">
+                <Button onClick={handleExportCSV} variant="outline" className="text-sm sm:text-base">
+                  <Download className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+                <Button onClick={handlePrint} variant="outline" className="text-sm sm:text-base">
+                  <Printer className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Print</span>
+                </Button>
                 <Button onClick={downloadTemplate} variant="outline" className="text-sm sm:text-base">
                   Download Template
                 </Button>
@@ -245,34 +331,124 @@ function Parents() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search by name or relationship..."
+              placeholder="Search by name, email, or relationship..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCurrentPage(1)
+              }}
               className="pl-10"
             />
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={paginatedParents.length > 0 && selectedParents.length === paginatedParents.length}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-sm text-gray-600">
+                {selectedParents.length} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Rows per page:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={paginatedParents.length > 0 && selectedParents.length === paginatedParents.length}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="rounded"
+                  />
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('name')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Name
+                    {sortColumn === 'name' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Relationship</TableHead>
-                <TableHead>Occupation</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('relationship')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Relationship
+                    {sortColumn === 'relationship' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort('occupation')}
+                    className="flex items-center gap-1 hover:text-gray-700"
+                  >
+                    Occupation
+                    {sortColumn === 'occupation' && (
+                      <ArrowUpDown className="h-4 w-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>Employer</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredParents.map((parent) => (
-                <TableRow key={parent.id}>
-                  <TableCell>{parent.first_name} {parent.last_name}</TableCell>
-                  <TableCell>{parent.email}</TableCell>
+              {paginatedParents.map((parent) => (
+                <TableRow key={parent.id} className={selectedParents.includes(parent.id) ? 'bg-blue-50' : ''}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedParents.includes(parent.id)}
+                      onChange={() => handleSelectParent(parent.id)}
+                      className="rounded"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{parent.first_name} {parent.last_name}</TableCell>
+                  <TableCell>{parent.email || 'N/A'}</TableCell>
+                  <TableCell>{parent.phone || 'N/A'}</TableCell>
                   <TableCell>{parent.relationship || 'N/A'}</TableCell>
                   <TableCell>{parent.occupation || 'N/A'}</TableCell>
-                  <TableCell>{parent.phone || 'N/A'}</TableCell>
+                  <TableCell>{parent.employer || 'N/A'}</TableCell>
+                  <TableCell>
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      parent.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {parent.status || 'active'}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(parent)}>
@@ -287,8 +463,61 @@ function Parents() {
               ))}
             </TableBody>
           </Table>
-          {filteredParents.length === 0 && (
+          {paginatedParents.length === 0 && (
             <div className="text-center py-8 text-gray-500">No parents found</div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center p-4 border-t">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedParents.length)} of {sortedParents.length} parents
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </div>

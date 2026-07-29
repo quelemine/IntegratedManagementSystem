@@ -1,6 +1,10 @@
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+// Use production Render URL if not in development
+const isDevelopment = import.meta.env.DEV
+const API_URL = import.meta.env.VITE_API_URL || (isDevelopment ? 'http://localhost:5000/api' : 'https://integrated-management-system.onrender.com/api')
+
+console.log('API URL:', API_URL)
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
