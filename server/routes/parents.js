@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const parentController = require('../controllers/parentController');
 const { authenticate } = require('../middleware/auth');
-const { schoolScope } = require('../middleware/authorization');
+const { authorize, schoolScope } = require('../middleware/authorization');
 const { validate, validationRules } = require('../middleware/validation');
 
 /**
