@@ -127,6 +127,20 @@ router.get('/payment-history', authenticate, financialReportController.getPaymen
 
 /**
  * @swagger
+ * /api/reports/summary:
+ *   get:
+ *     summary: Get financial summary dashboard (alias for /financial-summary)
+ *     tags: [Financial Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Financial summary retrieved successfully
+ */
+router.get('/summary', authenticate, financialReportController.getFinancialSummary);
+
+/**
+ * @swagger
  * /api/reports/financial-summary:
  *   get:
  *     summary: Get financial summary dashboard

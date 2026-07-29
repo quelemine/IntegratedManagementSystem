@@ -49,6 +49,8 @@ import ParentChildAssignments from './pages/ParentChildAssignments'
 import ParentChildFees from './pages/ParentChildFees'
 import ParentChildAnnouncements from './pages/ParentChildAnnouncements'
 import FinanceDashboard from './pages/FinanceDashboard'
+import PrincipalDashboard from './pages/PrincipalDashboard'
+import VicePrincipalDashboard from './pages/VicePrincipalDashboard'
 
 function App() {
   return (
@@ -100,6 +102,8 @@ function App() {
             <Route path="/parent/fees/:childId" element={<><ParentChildFees /><HelpDesk /></>} />
             <Route path="/parent/announcements/:childId" element={<><ParentChildAnnouncements /><HelpDesk /></>} />
             <Route path="/finance-dashboard" element={<><FinanceDashboard /><HelpDesk /></>} />
+            <Route path="/principal-dashboard" element={<><PrincipalDashboard /><HelpDesk /></>} />
+            <Route path="/vice-principal-dashboard" element={<><VicePrincipalDashboard /><HelpDesk /></>} />
           </Routes>
         </AuthProvider>
       </Router>
