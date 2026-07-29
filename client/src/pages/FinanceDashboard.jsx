@@ -23,7 +23,7 @@ export default function FinanceDashboard() {
     setLoading(true);
     try {
       const [statsRes, overdueRes, paymentsRes] = await Promise.all([
-        axios.get('/financial-reports/summary'),
+        axios.get('/financial-reports/financial-summary'),
         axios.get('/invoices/overdue'),
         axios.get('/payments', { params: { limit: 10 } })
       ]);
