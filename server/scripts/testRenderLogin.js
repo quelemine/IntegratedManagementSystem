@@ -9,12 +9,12 @@ const testRenderLogin = async () => {
   try {
     console.log('=== Testing Render Production API ===\n');
     
-    const API_URL = 'https://integrated-management-system.onrender.com/api';
+    const API_URL = 'https://integratedmanagementsystem.onrender.com/api';
     
     // First test health endpoint
     console.log('Testing health endpoint...');
     try {
-      const healthResponse = await axios.get('https://integrated-management-system.onrender.com/health', {
+      const healthResponse = await axios.get('https://integratedmanagementsystem.onrender.com/health', {
         timeout: 10000
       });
       console.log(`  ✅ Health check: ${healthResponse.status}`);
