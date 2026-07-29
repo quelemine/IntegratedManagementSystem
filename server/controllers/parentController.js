@@ -242,8 +242,8 @@ const getMyChildren = async (req, res) => {
     const children = await db('parent_student_relationships')
       .join('students', 'parent_student_relationships.student_id', 'students.id')
       .join('users', 'students.user_id', 'users.id')
-      .leftJoin('student_classes', 'students.id', 'student_classes.student_id')
-      .leftJoin('classes', 'student_classes.class_id', 'classes.id')
+      .leftJoin('classes', 'students.class_id', 'classes.id')
+      .leftJoin('grades', 'students.grade_id', 'grades.id')
       .select(
         'students.id',
         'students.student_id',
@@ -251,10 +251,9 @@ const getMyChildren = async (req, res) => {
         'users.last_name',
         'users.email',
         'classes.name as class_name',
-        'classes.division_name'
+        'grades.name as grade_name'
       )
-      .where('parent_student_relationships.parent_id', parent.id)
-      .where('students.is_active', true);
+      .where('parent_student_relationships.parent_id', parent.id);
 
     res.json({
       success: true,

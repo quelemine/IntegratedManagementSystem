@@ -17,8 +17,10 @@ const authenticate = async (req, res, next) => {
     
     // Verify user still exists and is active
     const user = await db('users')
-      .where('id', decoded.id)
-      .where('is_active', true)
+      .select('users.id', 'users.email', 'users.role_id', 'users.school_id', 'users.first_name', 'users.last_name', 'users.is_active', 'roles.name as role')
+      .join('roles', 'users.role_id', 'roles.id')
+      .where('users.id', decoded.id)
+      .where('users.is_active', true)
       .first();
     
     if (!user) {
@@ -29,6 +31,7 @@ const authenticate = async (req, res, next) => {
       id: user.id,
       email: user.email,
       role_id: user.role_id,
+      role: user.role,
       school_id: user.school_id,
       first_name: user.first_name,
       last_name: user.last_name

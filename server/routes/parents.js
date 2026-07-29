@@ -21,6 +21,20 @@ router.get('/', authenticate, schoolScope, parentController.getParents);
 
 /**
  * @swagger
+ * /api/parents/my-children:
+ *   get:
+ *     summary: Get logged-in parent's children
+ *     tags: [Parents]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Children retrieved successfully
+ */
+router.get('/my-children', authenticate, parentController.getMyChildren);
+
+/**
+ * @swagger
  * /api/parents/{id}:
  *   get:
  *     summary: Get parent by ID
