@@ -6,9 +6,14 @@ const db = require('../config/database');
 const getAnnouncements = async (req, res) => {
   try {
     const { is_active } = req.query;
-    const userId = req.user.id;
-    const schoolId = req.user.school_id;
-    const userRole = req.user.role;
+    const userId = req.user?.id;
+    const schoolId = req.user?.school_id;
+    const userRole = req.user?.role;
+
+    // If no user is authenticated, return empty array
+    if (!userId || !schoolId) {
+      return res.json({ success: true, data: [] });
+    }
 
     let query = db('announcements')
       .select(

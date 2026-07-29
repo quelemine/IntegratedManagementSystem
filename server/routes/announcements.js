@@ -7,13 +7,13 @@ const {
   updateAnnouncement,
   deleteAnnouncement
 } = require('../controllers/announcementController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 
-// All routes require authentication
+// GET /api/announcements - Get all announcements (optional auth for public view)
+router.get('/', optionalAuth, getAnnouncements);
+
+// All other routes require authentication
 router.use(authenticate);
-
-// GET /api/announcements - Get all announcements for the user's role
-router.get('/', getAnnouncements);
 
 // GET /api/announcements/:id - Get a specific announcement
 router.get('/:id', getAnnouncementById);
